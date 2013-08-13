@@ -127,28 +127,24 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
 
-		Date newEndDate = df.parse(endDate);
-
-		Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
-
 		Session session = getSessionFactory2().getCurrentSession();
 
 		try {
 
 			SQLQuery query1 = session
 					.createSQLQuery("select distinct pg.patient_id from patient_program pg "
-							//+ "inner join person pe on pg.patient_id = pe.person_id "
-							//+ "inner join patient pa on pg.patient_id = pa.patient_id "
-							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							/*+ "inner join drug_order do on ord.order_id = do.order_id "
-							+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
-							+ "where ord.concept_id IN ("
+							+ " inner join person pe on pg.patient_id = pe.person_id "
+							+ " inner join patient pa on pg.patient_id = pa.patient_id "
+							+ " inner join orders ord on pg.patient_id = ord.patient_id "
+							+ " where ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
 							+ ") and (cast(ord.start_date as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
-							+ "' and pg.program_id =  "
+							+ "' and pg.voided = 0 and pe.voided = 0 and pa.voided = 0 and ord.voided = 0 and pg.program_id =  "
 							+ Integer.parseInt(GlobalProperties
 									.gpGetHIVProgramId()));
 
@@ -156,76 +152,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 			for (Integer patientId : patientIds1) {
 
-				SQLQuery queryExited = session
-						.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-								+ Integer.parseInt(GlobalProperties
-										.gpGetExitFromCareConceptId())
-								+ " and (cast(o.obs_datetime as DATE)) <= '"
-								+ endDate
-								+ "' and o.voided = 0 and o.person_id="
-								+ patientId);
+				patientIdsList.add(patientId);
 
-				List<Integer> patientIds3 = queryExited.list();
-
-				if (patientIds3.size() == 0) {
-
-					/*SQLQuery queryDate1 = session
-							.createSQLQuery("select cast(max(encounter_datetime)as DATE) from encounter where "
-									+ "(select(cast(max(encounter_datetime)as Date))) <= '"
-									+ endDate
-									+ "' and (select cast(max(encounter_datetime)as DATE)) is not null and voided = 0 and patient_id = "
-									+ patientId);
-
-					List<Date> maxEnocunterDateTime = queryDate1.list();
-
-					SQLQuery queryDate2 = session
-							.createSQLQuery("select cast(max(value_datetime) as DATE ) "
-									+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
-									+ endDate
-									+ "' and concept_id = "
-									+ Integer.parseInt(GlobalProperties
-											.gpGetReturnVisitDateConceptId())
-									+ " and (select cast(max(value_datetime) as DATE )) is not null and voided = 0 and person_id = "
-									+ patientId);
-
-					List<Date> maxReturnVisitDay = queryDate2.list();
-
-					if (((maxReturnVisitDay.get(0)) != null)
-							&& (maxEnocunterDateTime.get(0) != null)) {
-
-						if (((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-								.getTime() && (maxEnocunterDateTime.get(0)
-								.getTime()) <= newEndDate.getTime())
-								|| ((maxReturnVisitDay.get(0).getTime()) >= threeMonthsBeforeEndDate
-										.getTime() && (maxReturnVisitDay.get(0)
-										.getTime()) <= newEndDate.getTime())) {
-
-							patientIdsList.add(patientId);
-
-						}
-					}
-
-					else if (((maxReturnVisitDay.get(0)) == null)
-							&& (maxEnocunterDateTime.get(0) != null)) {
-
-						if ((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-								.getTime()
-								&& (maxEnocunterDateTime.get(0).getTime()) <= newEndDate
-										.getTime()) {
-
-							patientIdsList.add(patientId);
-
-						}
-					} else if (((maxReturnVisitDay.get(0) != null))
-							&& (maxReturnVisitDay.get(0).getTime() > newEndDate
-									.getTime()))
-
-					{*/
-						patientIdsList.add(patientId);
-
-					}
-				}
-			//}
+			}
 
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
@@ -266,38 +195,17 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 			Session session = getSessionFactory2().getCurrentSession();
 
-			// SQLQuery query1 = session
-			// .createSQLQuery("select distinct pg.patient_id from patient_program pg "
-			// + "inner join person pe on pg.patient_id = pe.person_id "
-			// + "inner join patient pa on pg.patient_id = pa.patient_id "
-			// + "inner join orders ord on pg.patient_id = ord.patient_id "
-			// + "inner join drug_order do on ord.order_id = do.order_id "
-			// + "inner join drug d on do.drug_inventory_id = d.drug_id "
-			// + "WHERE DATE_FORMAT(FROM_DAYS(TO_DAYS('"
-			// + endDate
-			// + "') - TO_DAYS(pe.birthdate)), '%Y')+0 < 2 "
-			// + " and d.concept_id IN ("
-			// + GlobalProperties.gpGetListOfProphylaxisDrugs()
-			// + ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-			// + "and pa.voided = 0 and pg.date_enrolled >= '"
-			// + startDate
-			// + "'  and pg.date_enrolled <= '"
-			// + endDate
-			// + "' and pg.date_completed is null and pg.program_id = "
-			// + Integer.parseInt(GlobalProperties
-			// .gpGetHIVProgramId()));
-			//
-			// List<Integer> patientIds1 = query1.list();
-
 			SQLQuery query1 = session
 					.createSQLQuery("select distinct pg.patient_id from patient_program pg "
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
-							+ "WHERE DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "WHERE ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 < 2 "
 							+ " and pg.voided = 0 and pe.voided = 0 "
-							+ "and pa.voided = 0 and pg.date_enrolled >= '"
+							+ " and pa.voided = 0 and pg.date_enrolled >= '"
 							+ startDate
 							+ "'  and pg.date_enrolled <= '"
 							+ endDate
@@ -309,53 +217,36 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 			for (Integer patientId : patientIds1) {
 
-					SQLQuery queryDateEnrolled = session
-							.createSQLQuery("select cast(min(date_enrolled) as DATE) from patient_program where (select cast(min(date_enrolled) as DATE)) is not null and patient_id = "
-									+ patientId);
-					List<Date> dateEnrolled = queryDateEnrolled.list();
+				SQLQuery queryDateEnrolled = session
+						.createSQLQuery("select cast(min(date_enrolled) as DATE) from patient_program where (select cast((date_enrolled) as DATE)) is not null and patient_id = "
+								+ patientId);
+				List<Date> dateEnrolled = queryDateEnrolled.list();
 
-					if (dateEnrolled.get(0) != null) {
+				if (dateEnrolled.get(0) != null) {
 
-						if ((dateEnrolled.get(0).getTime() >= newStartDate
-								.getTime())
-								&& (dateEnrolled.get(0).getTime() <= newEndDate
-										.getTime()))
+					if ((dateEnrolled.get(0).getTime() >= newStartDate
+							.getTime())
+							&& (dateEnrolled.get(0).getTime() <= newEndDate
+									.getTime()))
 
-						{
-								SQLQuery queryExited = session
-										.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-												+ Integer
-														.parseInt(GlobalProperties
-																.gpGetExitFromCareConceptId())
-												+ " and (cast(o.obs_datetime as DATE)) < '"
-												+ endDate
-												+ "'"
-												+ " and o.voided = 0 and o.person_id= "
-												+ patientId);
+					{
 
-								List<Integer> patientIds3 = queryExited.list();
+						SQLQuery queryTransferredIn = session
+								.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
+										+ Integer.parseInt(GlobalProperties
+												.gpGetTransferredInConceptId())
+										+ " and o.voided = 0 and o.person_id= "
+										+ patientId);
 
-								if ((patientIds3.size() == 0)) {
+						List<Integer> patientIds4 = queryTransferredIn.list();
 
-									SQLQuery queryTransferredIn = session
-											.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-													+ Integer
-															.parseInt(GlobalProperties
-																	.gpGetTransferredInConceptId())
-													+ " and o.voided = 0 and o.person_id= "
-													+ patientId);
+						if (patientIds4.size() == 0) {
+							patientIdsList.add(patientId);
 
-									List<Integer> patientIds4 = queryTransferredIn
-											.list();
-
-									if (patientIds4.size() == 0) {
-										patientIdsList.add(patientId);
-
-									}
-								}
-							}
 						}
 					}
+				}
+			}
 
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
@@ -394,7 +285,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "WHERE DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 > 14 "
@@ -419,7 +313,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "inner join patient pa on pg.patient_id = pa.patient_id "
 								+ "inner join orders ord on pg.patient_id = ord.patient_id "
 								+ "inner join drug_order do on ord.order_id = do.order_id "
-								/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") and (cast(ord.start_date as DATE)) <= '"
@@ -473,7 +370,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "WHERE DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
@@ -498,7 +398,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "inner join patient pa on pg.patient_id = pa.patient_id "
 								+ "inner join orders ord on pg.patient_id = ord.patient_id "
 								+ "inner join drug_order do on ord.order_id = do.order_id "
-								/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") and (cast(ord.start_date as DATE)) <= '"
@@ -553,7 +456,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "WHERE DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 > 14 "
@@ -578,7 +484,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "inner join patient pa on pg.patient_id = pa.patient_id "
 								+ "inner join orders ord on pg.patient_id = ord.patient_id "
 								+ "inner join drug_order do on ord.order_id = do.order_id "
-								/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") and (cast(ord.start_date as DATE)) <= '"
@@ -634,7 +543,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "WHERE DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
@@ -659,7 +571,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "inner join patient pa on pg.patient_id = pa.patient_id "
 								+ "inner join orders ord on pg.patient_id = ord.patient_id "
 								+ "inner join drug_order do on ord.order_id = do.order_id "
-								/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
@@ -725,7 +640,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "WHERE DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 > 14 "
@@ -761,7 +679,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 						SQLQuery queryMinStartDate = session
 								.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
 										+ " inner join drug_order do on ord.order_id = do.order_id "
-										/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+										/*
+										 * +
+										 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+										 */
 										+ " where ord.concept_id IN ("
 										+ GlobalProperties.gpGetListOfTBDrugs()
 										+ ") "
@@ -778,9 +699,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryExited = session
 									.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetExitFromCareConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetExitFromCareConceptId())
 											+ " and (cast(o.obs_datetime as DATE)) <= '"
 											+ endDate
 											+ "' and o.voided = 0 and o.person_id= "
@@ -844,7 +764,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "WHERE DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
@@ -880,7 +803,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 						SQLQuery queryMinStartDate = session
 								.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
 										+ " inner join drug_order do on ord.order_id = do.order_id "
-										/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+										/*
+										 * +
+										 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+										 */
 										+ " where ord.concept_id IN ("
 										+ GlobalProperties.gpGetListOfTBDrugs()
 										+ ") "
@@ -897,9 +823,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryExited = session
 									.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetExitFromCareConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetExitFromCareConceptId())
 											+ " and (cast(o.obs_datetime as DATE)) <= '"
 											+ endDate
 											+ "' and o.voided = 0 and o.person_id= "
@@ -950,26 +875,25 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 		Date newEndDate = df.parse(endDate);
 
 		Date newStartDate = df.parse(startDate);
-		
-		Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
-		
 
+		// Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
 
-	try {
-		
-		Session session = getSessionFactory2().getCurrentSession();
+		try {
 
+			Session session = getSessionFactory2().getCurrentSession();
 
 			SQLQuery query1 = session
 					.createSQLQuery("select distinct pg.patient_id from patient_program pg "
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 > 14 "
 							+ " and pg.voided = 0 and pe.voided = 0 "
 							+ " and pa.voided = 0 and pe.gender = 'F' and pg.date_enrolled >= '"
-							+ startDate 
+							+ startDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
 							+ "' and pg.program_id =  "
@@ -980,112 +904,47 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 			for (Integer patientId : patientIds1) {
 
-					SQLQuery queryDateEnrolled = session
-							.createSQLQuery("select cast(max(date_enrolled) as DATE) from patient_program where (select cast(max(date_enrolled) as DATE)) is not null and patient_id = "
-									+ patientId);
-					List<Date> dateEnrolled = queryDateEnrolled.list();
+				SQLQuery queryDateEnrolled = session
+						.createSQLQuery("select cast(min(date_enrolled) as DATE) from patient_program where (select cast((date_enrolled) as DATE)) is not null and patient_id = "
+								+ patientId);
+				List<Date> dateEnrolled = queryDateEnrolled.list();
 
-					if (dateEnrolled.get(0) != null) {
+				if (dateEnrolled.get(0) != null) {
 
-						if ((dateEnrolled.get(0).getTime() >= newStartDate
-								.getTime())
-								&& (dateEnrolled.get(0).getTime() <= newEndDate
-										.getTime()))
+					if ((dateEnrolled.get(0).getTime() >= newStartDate
+							.getTime())
+							&& (dateEnrolled.get(0).getTime() <= newEndDate
+									.getTime()))
 
-						{
+					{
 
-							SQLQuery queryExited = session
-									.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetExitFromCareConceptId())
-											+ " and (cast(o.obs_datetime as DATE)) <= '"
-											+ endDate
-											+ "' and o.voided = 0 and o.person_id="
-											+ patientId);
+						SQLQuery queryTransferredIn = session
+								.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
+										+ Integer.parseInt(GlobalProperties
+												.gpGetTransferredInConceptId())
+										+ " and o.voided = 0 and o.person_id= "
+										+ patientId);
 
-							List<Integer> patientIds3 = queryExited.list();
+						List<Integer> patientIds4 = queryTransferredIn.list();
 
-							if (patientIds3.size() == 0) {
+						if (patientIds4.size() == 0) {
 
-								/*SQLQuery queryDate1 = session
-										.createSQLQuery("select cast(max(encounter_datetime)as DATE) from encounter where "
-												+ "(select(cast(max(encounter_datetime)as Date))) <= '"
-												+ endDate
-												+ "' and (select cast(max(encounter_datetime)as DATE)) is not null and voided = 0 and patient_id = "
-												+ patientId);
+							patientIdsList.add(patientId);
 
-								List<Date> maxEnocunterDateTime = queryDate1
-										.list();
-
-								SQLQuery queryDate2 = session
-										.createSQLQuery("select cast(max(value_datetime) as DATE ) "
-												+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
-												+ endDate
-												+ "' and concept_id = "
-												+ Integer
-														.parseInt(GlobalProperties
-																.gpGetReturnVisitDateConceptId())
-												+ " and (select cast(max(value_datetime) as DATE )) is not null and voided = 0 and person_id = "
-												+ patientId);
-
-								List<Date> maxReturnVisitDay = queryDate2
-										.list();
-
-								if (((maxReturnVisitDay.get(0)) != null)
-										&& (maxEnocunterDateTime.get(0) != null)) {
-
-									if (((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-											.getTime() && (maxEnocunterDateTime
-											.get(0).getTime()) <= newEndDate
-											.getTime())
-											|| ((maxReturnVisitDay.get(0)
-													.getTime()) >= threeMonthsBeforeEndDate
-													.getTime() && (maxReturnVisitDay
-													.get(0).getTime()) <= newEndDate
-													.getTime())) {
-
-										patientIdsList.add(patientId);
-
-									}
-								}
-
-								else if (((maxReturnVisitDay.get(0)) == null)
-										&& (maxEnocunterDateTime.get(0) != null)) {
-
-									if ((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-											.getTime()
-											&& (maxEnocunterDateTime.get(0)
-													.getTime()) <= newEndDate
-													.getTime()) {
-
-										patientIdsList.add(patientId);
-
-									}
-								} else if (((maxReturnVisitDay.get(0) != null))
-										&& (maxReturnVisitDay.get(0).getTime() > newEndDate
-												.getTime()))
-
-								{*/
-									patientIdsList.add(patientId);
-
-								}
-							}
 						}
 					}
-			//}
-			
+				}
+			}
+
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
 			}
-		
-}
+
+		}
 
 		catch (Exception e) {
 			e.printStackTrace();
 		}
-
-			
 
 		return patients;
 	}
@@ -1122,7 +981,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					.createSQLQuery("select distinct pg.patient_id from patient_program pg "
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
-							+ "WHERE DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "WHERE ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
 							+ " and pe.gender = 'F' and pg.voided = 0 and pe.voided = 0 "
@@ -1138,53 +999,37 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 			for (Integer patientId : patientIds1) {
 
-					SQLQuery queryDateEnrolled = session
-							.createSQLQuery("select cast(min(date_enrolled) as DATE) from patient_program where (select cast(min(date_enrolled) as DATE)) is not null and patient_id = "
-									+ patientId);
-					List<Date> dateEnrolled = queryDateEnrolled.list();
+				SQLQuery queryDateEnrolled = session
+						.createSQLQuery("select cast(min(date_enrolled) as DATE) from patient_program where (select cast((date_enrolled) as DATE)) is not null and patient_id = "
+								+ patientId);
+				List<Date> dateEnrolled = queryDateEnrolled.list();
 
-					if (dateEnrolled.get(0) != null) {
+				if (dateEnrolled.get(0) != null) {
 
-						if ((dateEnrolled.get(0).getTime() >= newStartDate
-								.getTime())
-								&& (dateEnrolled.get(0).getTime() <= newEndDate
-										.getTime()))
+					if ((dateEnrolled.get(0).getTime() >= newStartDate
+							.getTime())
+							&& (dateEnrolled.get(0).getTime() <= newEndDate
+									.getTime()))
 
-						{
-								SQLQuery queryExited = session
-										.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-												+ Integer
-														.parseInt(GlobalProperties
-																.gpGetExitFromCareConceptId())
-												+ " and (cast(o.obs_datetime as DATE)) <= '"
-												+ endDate
-												+ "' and o.voided = 0 and o.person_id= "
-												+ patientId);
+					{
 
-								List<Integer> patientIds3 = queryExited.list();
+						SQLQuery queryTransferredIn = session
+								.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
+										+ Integer.parseInt(GlobalProperties
+												.gpGetTransferredInConceptId())
+										+ " and o.voided = 0 and o.person_id= "
+										+ patientId);
 
-								if ((patientIds3.size() == 0)) {
+						List<Integer> patientIds4 = queryTransferredIn.list();
 
-									SQLQuery queryTransferredIn = session
-											.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-													+ Integer
-															.parseInt(GlobalProperties
-																	.gpGetTransferredInConceptId())
-													+ " and o.voided = 0 and o.person_id= "
-													+ patientId);
+						if (patientIds4.size() == 0) {
 
-									List<Integer> patientIds4 = queryTransferredIn
-											.list();
+							patientIdsList.add(patientId);
 
-									if (patientIds4.size() == 0) {
-
-										patientIdsList.add(patientId);
-
-									}
-								}
-							}
 						}
 					}
+				}
+			}
 
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
@@ -1230,7 +1075,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					.createSQLQuery("select distinct pg.patient_id from patient_program pg "
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
-							+ "WHERE DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "WHERE ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
 							+ " and pe.gender = 'M' and pg.voided = 0 and pe.voided = 0 "
@@ -1246,55 +1093,37 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 			for (Integer patientId : patientIds1) {
 
-					SQLQuery queryDateEnrolled = session
-							.createSQLQuery("select cast(min(date_enrolled) as DATE) from patient_program where (select cast(min(date_enrolled) as DATE)) is not null and patient_id = "
-									+ patientId);
-					List<Date> dateEnrolled = queryDateEnrolled.list();
+				SQLQuery queryDateEnrolled = session
+						.createSQLQuery("select cast(min(date_enrolled) as DATE) from patient_program where (select cast((date_enrolled) as DATE)) is not null and patient_id = "
+								+ patientId);
+				List<Date> dateEnrolled = queryDateEnrolled.list();
 
-					if (dateEnrolled.get(0) != null) {
+				if (dateEnrolled.get(0) != null) {
 
-						if ((dateEnrolled.get(0).getTime() >= newStartDate
-								.getTime())
-								&& (dateEnrolled.get(0).getTime() <= newEndDate
-										.getTime()))
+					if ((dateEnrolled.get(0).getTime() >= newStartDate
+							.getTime())
+							&& (dateEnrolled.get(0).getTime() <= newEndDate
+									.getTime()))
 
-						{
+					{
 
+						SQLQuery queryTransferredIn = session
+								.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
+										+ Integer.parseInt(GlobalProperties
+												.gpGetTransferredInConceptId())
+										+ " and o.voided = 0 and o.person_id= "
+										+ patientId);
 
-								SQLQuery queryExited = session
-										.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-												+ Integer
-														.parseInt(GlobalProperties
-																.gpGetExitFromCareConceptId())
-												+ " and (cast(o.obs_datetime as DATE)) <= '"
-												+ endDate
-												+ "' and o.person_id= "
-												+ patientId);
+						List<Integer> patientIds4 = queryTransferredIn.list();
 
-								List<Integer> patientIds3 = queryExited.list();
+						if (patientIds4.size() == 0) {
 
-								if ((patientIds3.size() == 0)) {
+							patientIdsList.add(patientId);
 
-									SQLQuery queryTransferredIn = session
-											.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-													+ Integer
-															.parseInt(GlobalProperties
-																	.gpGetTransferredInConceptId())
-													+ " and o.voided = 0 and o.person_id= "
-													+ patientId);
-
-									List<Integer> patientIds4 = queryTransferredIn
-											.list();
-
-									if (patientIds4.size() == 0) {
-
-										patientIdsList.add(patientId);
-
-									}
-								}
-							}
 						}
 					}
+				}
+			}
 
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
@@ -1340,11 +1169,13 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					.createSQLQuery("select distinct pg.patient_id from patient_program pg "
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
-							+ "WHERE DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "WHERE ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 4 "
 							+ " and pg.voided = 0 and pe.voided = 0 "
-							+ "and pa.voided = 0 and pg.date_enrolled >= '"
+							+ " and pa.voided = 0 and pg.date_enrolled >= '"
 							+ startDate
 							+ "'  and pg.date_enrolled <= '"
 							+ endDate
@@ -1356,54 +1187,37 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 			for (Integer patientId : patientIds1) {
 
-					SQLQuery queryDateEnrolled = session
-							.createSQLQuery("select cast(min(date_enrolled) as DATE) from patient_program where (select cast(min(date_enrolled) as DATE)) is not null and patient_id = "
-									+ patientId);
-					List<Date> dateEnrolled = queryDateEnrolled.list();
+				SQLQuery queryDateEnrolled = session
+						.createSQLQuery("select cast(min(date_enrolled) as DATE) from patient_program where (select cast((date_enrolled) as DATE)) is not null and patient_id = "
+								+ patientId);
+				List<Date> dateEnrolled = queryDateEnrolled.list();
 
-					if (dateEnrolled.get(0) != null) {
+				if (dateEnrolled.get(0) != null) {
 
-						if ((dateEnrolled.get(0).getTime() >= newStartDate
-								.getTime())
-								&& (dateEnrolled.get(0).getTime() <= newEndDate
-										.getTime()))
+					if ((dateEnrolled.get(0).getTime() >= newStartDate
+							.getTime())
+							&& (dateEnrolled.get(0).getTime() <= newEndDate
+									.getTime()))
 
-						{
+					{
 
-								SQLQuery queryExited = session
-										.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-												+ Integer
-														.parseInt(GlobalProperties
-																.gpGetExitFromCareConceptId())
-												+ " and (cast(o.obs_datetime as DATE)) <= '"
-												+ endDate
-												+ "' and o.voided = 0 and o.person_id= "
-												+ patientId);
+						SQLQuery queryTransferredIn = session
+								.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
+										+ Integer.parseInt(GlobalProperties
+												.gpGetTransferredInConceptId())
+										+ " and o.voided = 0 and o.person_id= "
+										+ patientId);
 
-								List<Integer> patientIds3 = queryExited.list();
+						List<Integer> patientIds4 = queryTransferredIn.list();
 
-								if ((patientIds3.size() == 0)) {
+						if (patientIds4.size() == 0) {
 
-									SQLQuery queryTransferredIn = session
-											.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-													+ Integer
-															.parseInt(GlobalProperties
-																	.gpGetTransferredInConceptId())
-													+ " and o.voided = 0 and o.person_id= "
-													+ patientId);
+							patientIdsList.add(patientId);
 
-									List<Integer> patientIds4 = queryTransferredIn
-											.list();
-
-									if (patientIds4.size() == 0) {
-
-										patientIdsList.add(patientId);
-
-									}
-								}
-							}
 						}
 					}
+				}
+			}
 
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
@@ -1453,7 +1267,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and o.voided = 0 and pg.date_enrolled >= '"
 							+ startDate
@@ -1547,7 +1364,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and o.voided = 0 and pg.date_enrolled >= '"
 							+ startDate
@@ -1585,9 +1405,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 									+ Integer.parseInt(GlobalProperties
 											.gpGetTBScreeningConceptId())
 									+ " and value_coded= "
-									+ Integer
-											.parseInt(GlobalProperties
-													.gpGetPositiveAsResultToHIVTestConceptId())
+									+ Integer.parseInt(GlobalProperties
+											.gpGetPositiveAsResultToHIVTestConceptId())
 									+ " and (select cast(obs_datetime as DATE)) is not null and voided = 0 and person_id = "
 									+ patientId);
 
@@ -1640,7 +1459,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "WHERE DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 < 2 "
@@ -1664,7 +1486,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "inner join patient pa on pg.patient_id = pa.patient_id "
 								+ "inner join orders ord on pg.patient_id = ord.patient_id "
 								+ "inner join drug_order do on ord.order_id = do.order_id "
-								/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") and (cast(ord.start_date as DATE)) <= '"
@@ -1718,7 +1543,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "WHERE DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 4 "
@@ -1742,7 +1570,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "inner join patient pa on pg.patient_id = pa.patient_id "
 								+ "inner join orders ord on pg.patient_id = ord.patient_id "
 								+ "inner join drug_order do on ord.order_id = do.order_id "
-								/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") and (cast(ord.start_date as DATE)) <= '"
@@ -1885,12 +1716,6 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 		ArrayList<Person> patients = new ArrayList<Person>();
 
-		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
-
-		Date newEndDate = df.parse(endDate);
-
-		Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
-
 		Session session = getSessionFactory2().getCurrentSession();
 
 		try {
@@ -1900,14 +1725,14 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 >= 15 "
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfFirstLineDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
@@ -1925,11 +1750,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "inner join person pe on pg.patient_id = pe.person_id "
 								+ "inner join patient pa on pg.patient_id = pa.patient_id "
 								+ "inner join orders ord on pg.patient_id = ord.patient_id "
-								+ "inner join drug_order do on ord.order_id = do.order_id "
-								/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfSecondLineDrugs()
-								+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+								+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 								+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
 								+ endDate
 								+ "'"
@@ -1940,79 +1763,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 				if (patientIds2.size() == 0) {
 
-					SQLQuery queryExited = session
-							.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-									+ Integer.parseInt(GlobalProperties
-											.gpGetExitFromCareConceptId())
-									+ " and (cast(o.obs_datetime as DATE)) <= '"
-									+ endDate
-									+ "' and o.voided = 0 and o.person_id="
-									+ patientId);
+					patientIdsList.add(patientId);
 
-					List<Integer> patientIds3 = queryExited.list();
-
-					if (patientIds3.size() == 0) {
-
-						/*SQLQuery queryDate1 = session
-								.createSQLQuery("select cast(max(encounter_datetime)as DATE) from encounter where "
-										+ "(select(cast(max(encounter_datetime)as Date))) <= '"
-										+ endDate
-										+ "' and (select cast(max(encounter_datetime)as DATE)) is not null and voided = 0 and patient_id = "
-										+ patientId);
-
-						List<Date> maxEnocunterDateTime = queryDate1.list();
-
-						SQLQuery queryDate2 = session
-								.createSQLQuery("select cast(max(value_datetime) as DATE ) "
-										+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
-										+ endDate
-										+ "' and concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetReturnVisitDateConceptId())
-										+ " and (select cast(max(value_datetime) as DATE )) is not null and voided = 0 and person_id = "
-										+ patientId);
-
-						List<Date> maxReturnVisitDay = queryDate2.list();
-
-						if (((maxReturnVisitDay.get(0)) != null)
-								&& (maxEnocunterDateTime.get(0) != null)) {
-
-							if (((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-									.getTime() && (maxEnocunterDateTime.get(0)
-									.getTime()) <= newEndDate.getTime())
-									|| ((maxReturnVisitDay.get(0).getTime()) >= threeMonthsBeforeEndDate
-											.getTime() && (maxReturnVisitDay
-											.get(0).getTime()) <= newEndDate
-											.getTime())) {
-
-								patientIdsList.add(patientId);
-
-							}
-						}
-
-						else if (((maxReturnVisitDay.get(0)) == null)
-								&& (maxEnocunterDateTime.get(0) != null)) {
-
-							if ((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-									.getTime()
-									&& (maxEnocunterDateTime.get(0).getTime()) <= newEndDate
-											.getTime()) {
-
-								patientIdsList.add(patientId);
-
-							}
-						} else if (((maxReturnVisitDay.get(0) != null))
-								&& (maxReturnVisitDay.get(0).getTime() > newEndDate
-										.getTime()))
-
-						{*/
-							patientIdsList.add(patientId);
-
-						}
-					}
 				}
-			//}
+			}
 
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
@@ -2059,7 +1813,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 > 14 "
@@ -2193,7 +1950,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 > 14 "
@@ -2208,9 +1968,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ Integer.parseInt(GlobalProperties
 									.gpGetTransferredInConceptId())
 							+ " and o.value_coded = "
-							+ Integer
-									.parseInt(GlobalProperties
-											.gpGetYesAsAnswerToTransferredInConceptId())
+							+ Integer.parseInt(GlobalProperties
+									.gpGetYesAsAnswerToTransferredInConceptId())
 							+ " and pg.program_id =  "
 							+ Integer.parseInt(GlobalProperties
 									.gpGetHIVProgramId()));
@@ -2296,7 +2055,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 > 14 "
@@ -2326,9 +2088,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ Integer.parseInt(GlobalProperties
 										.gpGetExitFromCareConceptId())
 								+ " and value_coded= "
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetExitFromTransferredOutConceptId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetExitFromTransferredOutConceptId())
 								+ " and (select cast(obs_datetime as DATE)) is not null and voided = 0 and person_id = "
 								+ patientId);
 
@@ -2388,7 +2149,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
@@ -2481,7 +2245,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
@@ -2516,7 +2283,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					SQLQuery queryDrugs = session
 							.createSQLQuery("select count(*) from orders ord "
 									+ " inner join drug_order do on ord.order_id = do.order_id "
-									/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+									/*
+									 * +
+									 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+									 */
 									+ " where ord.concept_id IN ("
 									+ GlobalProperties.gpGetListOfARVsDrugs()
 									+ ") and ord.voided = 0 and ord.patient_id = "
@@ -2527,7 +2297,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					SQLQuery queryDrugsDiscontinued = session
 							.createSQLQuery("select count(*) from orders ord "
 									+ " inner join drug_order do on ord.order_id = do.order_id "
-									/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+									/*
+									 * +
+									 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+									 */
 									+ " where ord.concept_id IN ("
 									+ GlobalProperties.gpGetListOfARVsDrugs()
 									+ ") and ord.voided = 0 and ord.discontinued = 1 and ord.patient_id = "
@@ -2542,7 +2315,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 						SQLQuery queryDate = session
 								.createSQLQuery("select cast(discontinued_date as DATE) from orders ord "
 										+ "inner join drug_order do on ord.order_id = do.order_id "
-										/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+										/*
+										 * +
+										 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+										 */
 										+ " where ord.concept_id IN ("
 										+ GlobalProperties
 												.gpGetListOfARVsDrugs()
@@ -2620,7 +2396,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
@@ -2754,7 +2533,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
@@ -2769,9 +2551,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ Integer.parseInt(GlobalProperties
 									.gpGetTransferredInConceptId())
 							+ " and o.value_coded = "
-							+ Integer
-									.parseInt(GlobalProperties
-											.gpGetYesAsAnswerToTransferredInConceptId())
+							+ Integer.parseInt(GlobalProperties
+									.gpGetYesAsAnswerToTransferredInConceptId())
 							+ " and pg.program_id =  "
 							+ Integer.parseInt(GlobalProperties
 									.gpGetHIVProgramId()));
@@ -2857,7 +2638,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
@@ -2887,9 +2671,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ Integer.parseInt(GlobalProperties
 										.gpGetExitFromCareConceptId())
 								+ " and value_coded= "
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetExitFromTransferredOutConceptId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetExitFromTransferredOutConceptId())
 								+ " and (select cast(obs_datetime as DATE)) is not null and voided = 0 and person_id = "
 								+ patientId);
 
@@ -2929,12 +2712,6 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 	public List<Person> femaleMoreThanFifteenCurrentOnArv(String startDate,
 			String endDate) throws ParseException {
 
-		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
-
-		Date newEndDate = df.parse(endDate);
-
-		Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
-
 		List<Integer> patientIdsList = new ArrayList<Integer>();
 
 		ArrayList<Person> patients = new ArrayList<Person>();
@@ -2948,9 +2725,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 >= 15 "
 							+ " and pe.gender = 'F' and ord.concept_id IN ("
@@ -2968,76 +2745,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 			for (Integer patientId : patientIds1) {
 
-				SQLQuery queryExited = session
-						.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-								+ Integer.parseInt(GlobalProperties
-										.gpGetExitFromCareConceptId())
-								+ " and (cast(o.obs_datetime as DATE)) <= '"
-								+ endDate
-								+ "' and o.voided = 0 and o.person_id="
-								+ patientId);
+				patientIdsList.add(patientId);
 
-				List<Integer> patientIds3 = queryExited.list();
-
-				if (patientIds3.size() == 0) {
-
-					/*SQLQuery queryDate1 = session
-							.createSQLQuery("select cast(max(encounter_datetime)as DATE) from encounter where "
-									+ "(select(cast(max(encounter_datetime)as Date))) <= '"
-									+ endDate
-									+ "' and (select cast(max(encounter_datetime)as DATE)) is not null and voided = 0 and patient_id = "
-									+ patientId);
-
-					List<Date> maxEnocunterDateTime = queryDate1.list();
-
-					SQLQuery queryDate2 = session
-							.createSQLQuery("select cast(max(value_datetime) as DATE ) "
-									+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
-									+ endDate
-									+ "' and concept_id = "
-									+ Integer.parseInt(GlobalProperties
-											.gpGetReturnVisitDateConceptId())
-									+ " and (select cast(max(value_datetime) as DATE )) is not null and voided = 0 and person_id = "
-									+ patientId);
-
-					List<Date> maxReturnVisitDay = queryDate2.list();
-
-					if (((maxReturnVisitDay.get(0)) != null)
-							&& (maxEnocunterDateTime.get(0) != null)) {
-
-						if (((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-								.getTime() && (maxEnocunterDateTime.get(0)
-								.getTime()) <= newEndDate.getTime())
-								|| ((maxReturnVisitDay.get(0).getTime()) >= threeMonthsBeforeEndDate
-										.getTime() && (maxReturnVisitDay.get(0)
-										.getTime()) <= newEndDate.getTime())) {
-
-							patientIdsList.add(patientId);
-
-						}
-					}
-
-					else if (((maxReturnVisitDay.get(0)) == null)
-							&& (maxEnocunterDateTime.get(0) != null)) {
-
-						if ((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-								.getTime()
-								&& (maxEnocunterDateTime.get(0).getTime()) <= newEndDate
-										.getTime()) {
-
-							patientIdsList.add(patientId);
-
-						}
-					} else if (((maxReturnVisitDay.get(0) != null))
-							&& (maxReturnVisitDay.get(0).getTime() > newEndDate
-									.getTime()))
-
-					{*/
-						patientIdsList.add(patientId);
-
-					}
-				}
-			//}
+			}
 
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
@@ -3085,7 +2795,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where pe.gender = 'F' and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
@@ -3119,7 +2832,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					SQLQuery queryMinStartDate = session
 							.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
 									+ " inner join drug_order do on ord.order_id = do.order_id "
-									/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+									/*
+									 * +
+									 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+									 */
 									+ " where ord.concept_id IN ("
 									+ GlobalProperties.gpGetListOfARVsDrugs()
 									+ ") "
@@ -3152,9 +2868,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 											+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
 											+ endDate
 											+ "' and concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetReturnVisitDateConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetReturnVisitDateConceptId())
 											+ " and (select cast(max(value_datetime) as DATE )) is not null and voided = 0 and person_id = "
 											+ patientId);
 
@@ -3229,14 +2944,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 		List<Integer> patientIdsList = new ArrayList<Integer>();
 
-		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
-
-		Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
-
-		Date newEndDate = df.parse(endDate);
-
-		@SuppressWarnings("unused")
-		Date newStartDate = df.parse(startDate);
+		//SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
 
 		Session session = getSessionFactory2().getCurrentSession();
 
@@ -3247,14 +2955,14 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
 							+ " and pe.gender = 'F' and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
@@ -3267,76 +2975,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 			for (Integer patientId : patientIds1) {
 
-				SQLQuery queryExited = session
-						.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-								+ Integer.parseInt(GlobalProperties
-										.gpGetExitFromCareConceptId())
-								+ " and (cast(o.obs_datetime as DATE)) <= '"
-								+ endDate
-								+ "' and o.voided = 0 and o.person_id="
-								+ patientId);
+				patientIdsList.add(patientId);
 
-				List<Integer> patientIds3 = queryExited.list();
-
-				if (patientIds3.size() == 0) {
-
-					/*SQLQuery queryDate1 = session
-							.createSQLQuery("select cast(max(encounter_datetime)as DATE) from encounter where "
-									+ "(select(cast(max(encounter_datetime)as Date))) <= '"
-									+ endDate
-									+ "' and (select cast(max(encounter_datetime)as DATE)) is not null and voided = 0 and patient_id = "
-									+ patientId);
-
-					List<Date> maxEnocunterDateTime = queryDate1.list();
-
-					SQLQuery queryDate2 = session
-							.createSQLQuery("select cast(max(value_datetime) as DATE ) "
-									+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
-									+ endDate
-									+ "' and concept_id = "
-									+ Integer.parseInt(GlobalProperties
-											.gpGetReturnVisitDateConceptId())
-									+ " and (select cast(max(value_datetime) as DATE )) is not null and voided = 0 and person_id = "
-									+ patientId);
-
-					List<Date> maxReturnVisitDay = queryDate2.list();
-
-					if (((maxReturnVisitDay.get(0)) != null)
-							&& (maxEnocunterDateTime.get(0) != null)) {
-
-						if (((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-								.getTime() && (maxEnocunterDateTime.get(0)
-								.getTime()) <= newEndDate.getTime())
-								|| ((maxReturnVisitDay.get(0).getTime()) >= threeMonthsBeforeEndDate
-										.getTime() && (maxReturnVisitDay.get(0)
-										.getTime()) <= newEndDate.getTime())) {
-
-							patientIdsList.add(patientId);
-
-						}
-					}
-
-					else if (((maxReturnVisitDay.get(0)) == null)
-							&& (maxEnocunterDateTime.get(0) != null)) {
-
-						if ((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-								.getTime()
-								&& (maxEnocunterDateTime.get(0).getTime()) <= newEndDate
-										.getTime()) {
-
-							patientIdsList.add(patientId);
-
-						}
-					} else if (((maxReturnVisitDay.get(0) != null))
-							&& (maxReturnVisitDay.get(0).getTime() > newEndDate
-									.getTime()))
-
-					{*/
-						patientIdsList.add(patientId);
-
-					}
-				}
-			//}
+			}
 
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
@@ -3366,15 +3007,6 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 		List<Integer> patientIdsList = new ArrayList<Integer>();
 
-		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
-
-		Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
-
-		Date newEndDate = df.parse(endDate);
-
-		@SuppressWarnings("unused")
-		Date newStartDate = df.parse(startDate);
-
 		Session session = getSessionFactory2().getCurrentSession();
 
 		try {
@@ -3384,14 +3016,14 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 > 14 "
 							+ " and pe.gender = 'M' and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
@@ -3404,76 +3036,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 			for (Integer patientId : patientIds1) {
 
-				SQLQuery queryExited = session
-						.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-								+ Integer.parseInt(GlobalProperties
-										.gpGetExitFromCareConceptId())
-								+ " and (cast(o.obs_datetime as DATE)) <= '"
-								+ endDate
-								+ "' and o.voided = 0 and o.person_id="
-								+ patientId);
+				patientIdsList.add(patientId);
 
-				List<Integer> patientIds3 = queryExited.list();
-
-				if (patientIds3.size() == 0) {
-
-					/*SQLQuery queryDate1 = session
-							.createSQLQuery("select cast(max(encounter_datetime)as DATE) from encounter where "
-									+ "(select(cast(max(encounter_datetime)as Date))) <= '"
-									+ endDate
-									+ "' and (select cast(max(encounter_datetime)as DATE)) is not null and voided = 0 and patient_id = "
-									+ patientId);
-
-					List<Date> maxEnocunterDateTime = queryDate1.list();
-
-					SQLQuery queryDate2 = session
-							.createSQLQuery("select cast(max(value_datetime) as DATE ) "
-									+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
-									+ endDate
-									+ "' and concept_id = "
-									+ Integer.parseInt(GlobalProperties
-											.gpGetReturnVisitDateConceptId())
-									+ " and (select cast(max(value_datetime) as DATE )) is not null and voided = 0 and person_id = "
-									+ patientId);
-
-					List<Date> maxReturnVisitDay = queryDate2.list();
-
-					if (((maxReturnVisitDay.get(0)) != null)
-							&& (maxEnocunterDateTime.get(0) != null)) {
-
-						if (((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-								.getTime() && (maxEnocunterDateTime.get(0)
-								.getTime()) <= newEndDate.getTime())
-								|| ((maxReturnVisitDay.get(0).getTime()) >= threeMonthsBeforeEndDate
-										.getTime() && (maxReturnVisitDay.get(0)
-										.getTime()) <= newEndDate.getTime())) {
-
-							patientIdsList.add(patientId);
-
-						}
-					}
-
-					else if (((maxReturnVisitDay.get(0)) == null)
-							&& (maxEnocunterDateTime.get(0) != null)) {
-
-						if ((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-								.getTime()
-								&& (maxEnocunterDateTime.get(0).getTime()) <= newEndDate
-										.getTime()) {
-
-							patientIdsList.add(patientId);
-
-						}
-					} else if (((maxReturnVisitDay.get(0) != null))
-							&& (maxReturnVisitDay.get(0).getTime() > newEndDate
-									.getTime()))
-
-					{*/
-						patientIdsList.add(patientId);
-
-					}
-				}
-			//}
+			}
 
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
@@ -3521,7 +3086,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where pe.gender = 'M' and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
@@ -3555,7 +3123,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					SQLQuery queryMinStartDate = session
 							.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
 									+ " inner join drug_order do on ord.order_id = do.order_id "
-									/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+									/*
+									 * +
+									 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+									 */
 									+ " where ord.concept_id IN ("
 									+ GlobalProperties.gpGetListOfARVsDrugs()
 									+ ") "
@@ -3588,9 +3159,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 											+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
 											+ endDate
 											+ "' and concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetReturnVisitDateConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetReturnVisitDateConceptId())
 											+ " and (select cast(max(value_datetime) as DATE )) is not null and voided = 0 and person_id = "
 											+ patientId);
 
@@ -3665,11 +3235,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 		ArrayList<Person> patients = new ArrayList<Person>();
 
-		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
-
-		Date newEndDate = df.parse(endDate);
-
-		Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
+		//SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
 
 		Session session = getSessionFactory2().getCurrentSession();
 
@@ -3680,14 +3246,14 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
 							+ " and pe.gender = 'M' and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
@@ -3700,76 +3266,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 			for (Integer patientId : patientIds1) {
 
-				SQLQuery queryExited = session
-						.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-								+ Integer.parseInt(GlobalProperties
-										.gpGetExitFromCareConceptId())
-								+ " and (cast(o.obs_datetime as DATE)) <= '"
-								+ endDate
-								+ "' and o.voided = 0 and o.person_id="
-								+ patientId);
+				patientIdsList.add(patientId);
 
-				List<Integer> patientIds3 = queryExited.list();
-
-				if (patientIds3.size() == 0) {
-
-					/*SQLQuery queryDate1 = session
-							.createSQLQuery("select cast(max(encounter_datetime)as DATE) from encounter where "
-									+ "(select(cast(max(encounter_datetime)as Date))) <= '"
-									+ endDate
-									+ "' and (select cast(max(encounter_datetime)as DATE)) is not null and voided = 0 and patient_id = "
-									+ patientId);
-
-					List<Date> maxEnocunterDateTime = queryDate1.list();
-
-					SQLQuery queryDate2 = session
-							.createSQLQuery("select cast(max(value_datetime) as DATE ) "
-									+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
-									+ endDate
-									+ "' and concept_id = "
-									+ Integer.parseInt(GlobalProperties
-											.gpGetReturnVisitDateConceptId())
-									+ " and (select cast(max(value_datetime) as DATE )) is not null and voided = 0 and person_id = "
-									+ patientId);
-
-					List<Date> maxReturnVisitDay = queryDate2.list();
-
-					if (((maxReturnVisitDay.get(0)) != null)
-							&& (maxEnocunterDateTime.get(0) != null)) {
-
-						if (((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-								.getTime() && (maxEnocunterDateTime.get(0)
-								.getTime()) <= newEndDate.getTime())
-								|| ((maxReturnVisitDay.get(0).getTime()) >= threeMonthsBeforeEndDate
-										.getTime() && (maxReturnVisitDay.get(0)
-										.getTime()) <= newEndDate.getTime())) {
-
-							patientIdsList.add(patientId);
-
-						}
-					}
-
-					else if (((maxReturnVisitDay.get(0)) == null)
-							&& (maxEnocunterDateTime.get(0) != null)) {
-
-						if ((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-								.getTime()
-								&& (maxEnocunterDateTime.get(0).getTime()) <= newEndDate
-										.getTime()) {
-
-							patientIdsList.add(patientId);
-
-						}
-					} else if (((maxReturnVisitDay.get(0) != null))
-							&& (maxReturnVisitDay.get(0).getTime() > newEndDate
-									.getTime()))
-
-					{*/
-						patientIdsList.add(patientId);
-
-					}
-				}
-			//}
+			}
 
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
@@ -3813,7 +3312,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
@@ -3851,7 +3353,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				SQLQuery queryMinStartDate = session
 						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
-								/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
@@ -3945,7 +3450,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
@@ -3983,7 +3491,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				SQLQuery queryMinStartDate = session
 						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
-								/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
@@ -4077,7 +3588,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
@@ -4115,7 +3629,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				SQLQuery queryMinStartDate = session
 						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
-								/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
@@ -4209,7 +3726,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
@@ -4247,7 +3767,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				SQLQuery queryMinStartDate = session
 						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
-								/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
@@ -4341,7 +3864,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
@@ -4382,7 +3908,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				SQLQuery queryMinStartDate = session
 						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
-								/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
@@ -4403,9 +3932,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 										+ Integer.parseInt(GlobalProperties
 												.gpGetWhoStageConceptId())
 										+ " and value_coded= "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetWhoStageTwoAdultConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetWhoStageTwoAdultConceptId())
 										+ " and (select cast(obs_datetime as DATE)) is not null and voided = 0 and person_id = "
 										+ patientId);
 
@@ -4463,15 +3991,15 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 > 14 "
 							+ " and pe.gender = 'F' and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
-							+ "and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ " and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
 							+ startDate
 							+ "' and (cast(ord.start_date as DATE)) <= '"
@@ -4484,39 +4012,22 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 			List<Integer> patientIds1 = query1.list();
 			for (Integer patientId : patientIds1) {
 
-				SQLQuery query2 = session
-						.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-								+ Integer.parseInt(GlobalProperties
-										.gpGetExitFromCareConceptId())
-								+ " and (cast(o.obs_datetime as DATE)) <= '"
-								+ endDate
-								+ "' and o.voided = 0 and o.person_id="
+				SQLQuery queryMinStartDate = session
+						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+								+ " where ord.concept_id IN ("
+								+ GlobalProperties.gpGetListOfARVsDrugs()
+								+ ") "
+								+ " and (select (cast((ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
-				List<Integer> patientIds2 = query2.list();
+				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
 
-				if (patientIds2.size() == 0) {
+				if ((patientIdsMinStartDate.get(0).getTime() >= newStartDate
+						.getTime())
+						&& patientIdsMinStartDate.get(0).getTime() <= newEndDate
+								.getTime()) {
 
-					SQLQuery queryMinStartDate = session
-							.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
-									+ " inner join drug_order do on ord.order_id = do.order_id "
-									/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
-									+ " where ord.concept_id IN ("
-									+ GlobalProperties.gpGetListOfARVsDrugs()
-									+ ") "
-									+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
-									+ patientId);
-
-					List<Date> patientIdsMinStartDate = queryMinStartDate
-							.list();
-
-					if ((patientIdsMinStartDate.get(0).getTime() >= newStartDate
-							.getTime())
-							&& patientIdsMinStartDate.get(0).getTime() <= newEndDate
-									.getTime()) {
-
-						patientIdsList.add(patientId);
-					}
+					patientIdsList.add(patientId);
 				}
 			}
 
@@ -4561,15 +4072,13 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
-							+ "and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ " and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
 							+ startDate
 							+ "' and (cast(ord.start_date as DATE)) <= '"
@@ -4582,40 +4091,23 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 			List<Integer> patientIds1 = query1.list();
 			for (Integer patientId : patientIds1) {
 
-				SQLQuery query2 = session
-						.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-								+ Integer.parseInt(GlobalProperties
-										.gpGetExitFromCareConceptId())
-								+ " and (cast(o.obs_datetime as DATE)) <= '"
-								+ endDate
-								+ "' and o.voided = 0 and o.person_id="
+				SQLQuery queryMinStartDate = session
+						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+								+ " where ord.concept_id IN ("
+								+ GlobalProperties.gpGetListOfARVsDrugs()
+								+ ") "
+								+ " and (select (cast((ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
-				List<Integer> patientIds2 = query2.list();
+				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
 
-				if (patientIds2.size() == 0) {
+				if ((patientIdsMinStartDate.get(0).getTime() >= newStartDate
+						.getTime())
+						&& patientIdsMinStartDate.get(0).getTime() <= newEndDate
+								.getTime())
 
-					SQLQuery queryMinStartDate = session
-							.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
-									+ " inner join drug_order do on ord.order_id = do.order_id "
-									/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
-									+ " where ord.concept_id IN ("
-									+ GlobalProperties.gpGetListOfARVsDrugs()
-									+ ") "
-									+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
-									+ patientId);
-
-					List<Date> patientIdsMinStartDate = queryMinStartDate
-							.list();
-
-					if ((patientIdsMinStartDate.get(0).getTime() >= newStartDate
-							.getTime())
-							&& patientIdsMinStartDate.get(0).getTime() <= newEndDate
-									.getTime())
-
-					{
-						patientIdsList.add(patientId);
-					}
+				{
+					patientIdsList.add(patientId);
 				}
 			}
 
@@ -4660,15 +4152,15 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+  endDate
+							 + "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 > 14 "
 							+ " and pe.gender = 'M' and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
-							+ "and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ " and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
 							+ startDate
 							+ "' and (cast(ord.start_date as DATE)) <= '"
@@ -4681,30 +4173,17 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 			List<Integer> patientIds1 = query1.list();
 			for (Integer patientId : patientIds1) {
 
-				SQLQuery query2 = session
-						.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-								+ Integer.parseInt(GlobalProperties
-										.gpGetExitFromCareConceptId())
-								+ " and (cast(o.obs_datetime as DATE)) <= '"
-								+ endDate
-								+ "' and o.voided = 0 and o.person_id="
-								+ patientId);
-
-				List<Integer> patientIds2 = query2.list();
-
+				
 				SQLQuery queryMinStartDate = session
 						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
-								+ " inner join drug_order do on ord.order_id = do.order_id "
-								/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
-								+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+								+ " and (select (cast((ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
 				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
 
-				if (patientIds2.size() == 0)
 
 					if ((patientIdsMinStartDate.get(0).getTime() >= newStartDate
 							.getTime())
@@ -4759,7 +4238,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
@@ -4795,7 +4277,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					SQLQuery queryMinStartDate = session
 							.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
 									+ " inner join drug_order do on ord.order_id = do.order_id "
-									/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+									/*
+									 * +
+									 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+									 */
 									+ " where ord.concept_id IN ("
 									+ GlobalProperties.gpGetListOfARVsDrugs()
 									+ ") "
@@ -4856,7 +4341,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
@@ -4894,7 +4382,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				SQLQuery queryMinStartDate = session
 						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
-								/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
@@ -4989,15 +4480,15 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 < 2 "
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
-							+ "and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ " and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
 							+ startDate
 							+ "' and (cast(ord.start_date as DATE)) <= '"
@@ -5010,40 +4501,23 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 			List<Integer> patientIds1 = query1.list();
 			for (Integer patientId : patientIds1) {
 
-				SQLQuery query2 = session
-						.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-								+ Integer.parseInt(GlobalProperties
-										.gpGetExitFromCareConceptId())
-								+ " and (cast(o.obs_datetime as DATE)) <= '"
-								+ endDate
-								+ "' and o.voided = 0 and o.person_id="
+				SQLQuery queryMinStartDate = session
+						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+								+ " where ord.concept_id IN ("
+								+ GlobalProperties.gpGetListOfARVsDrugs()
+								+ ") "
+								+ " and (select (cast((ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
-				List<Integer> patientIds2 = query2.list();
+				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
 
-				if (patientIds2.size() == 0) {
+				if ((patientIdsMinStartDate.get(0).getTime() >= newStartDate
+						.getTime())
+						&& patientIdsMinStartDate.get(0).getTime() <= newEndDate
+								.getTime())
 
-					SQLQuery queryMinStartDate = session
-							.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
-									+ " inner join drug_order do on ord.order_id = do.order_id "
-									/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
-									+ " where ord.concept_id IN ("
-									+ GlobalProperties.gpGetListOfARVsDrugs()
-									+ ") "
-									+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
-									+ patientId);
-
-					List<Date> patientIdsMinStartDate = queryMinStartDate
-							.list();
-
-					if ((patientIdsMinStartDate.get(0).getTime() >= newStartDate
-							.getTime())
-							&& patientIdsMinStartDate.get(0).getTime() <= newEndDate
-									.getTime())
-
-					{
-						patientIdsList.add(patientId);
-					}
+				{
+					patientIdsList.add(patientId);
 				}
 			}
 
@@ -5089,15 +4563,15 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 4 "
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
-							+ "and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ "and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
 							+ startDate
 							+ "' and (cast(ord.start_date as DATE)) <= '"
@@ -5110,40 +4584,23 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 			List<Integer> patientIds1 = query1.list();
 			for (Integer patientId : patientIds1) {
 
-				SQLQuery query2 = session
-						.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-								+ Integer.parseInt(GlobalProperties
-										.gpGetExitFromCareConceptId())
-								+ " and (cast(o.obs_datetime as DATE)) <= '"
-								+ endDate
-								+ "' and o.voided = 0 and o.person_id="
+				SQLQuery queryMinStartDate = session
+						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+								+ " where ord.concept_id IN ("
+								+ GlobalProperties.gpGetListOfARVsDrugs()
+								+ ") "
+								+ " and (select (cast((ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
-				List<Integer> patientIds2 = query2.list();
+				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
 
-				if (patientIds2.size() == 0) {
+				if ((patientIdsMinStartDate.get(0).getTime() >= newStartDate
+						.getTime())
+						&& patientIdsMinStartDate.get(0).getTime() <= newEndDate
+								.getTime())
 
-					SQLQuery queryMinStartDate = session
-							.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
-									+ " inner join drug_order do on ord.order_id = do.order_id "
-									/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
-									+ " where ord.concept_id IN ("
-									+ GlobalProperties.gpGetListOfARVsDrugs()
-									+ ") "
-									+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
-									+ patientId);
-
-					List<Date> patientIdsMinStartDate = queryMinStartDate
-							.list();
-
-					if ((patientIdsMinStartDate.get(0).getTime() >= newStartDate
-							.getTime())
-							&& patientIdsMinStartDate.get(0).getTime() <= newEndDate
-									.getTime())
-
-					{
-						patientIdsList.add(patientId);
-					}
+				{
+					patientIdsList.add(patientId);
 				}
 			}
 
@@ -5189,7 +4646,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
@@ -5227,7 +4687,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				SQLQuery queryMinStartDate = session
 						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
-								/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
@@ -5322,7 +4785,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
@@ -5360,7 +4826,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				SQLQuery queryMinStartDate = session
 						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
-								/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
@@ -5455,7 +4924,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
@@ -5493,7 +4965,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				SQLQuery queryMinStartDate = session
 						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
-								/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
@@ -5588,7 +5063,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
@@ -5626,7 +5104,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				SQLQuery queryMinStartDate = session
 						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
-								/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
@@ -5706,11 +5187,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 		ArrayList<Person> patients = new ArrayList<Person>();
 
-		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
-
-		Date newEndDate = df.parse(endDate);
-
-		Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
+		//SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
 
 		Session session = getSessionFactory2().getCurrentSession();
 
@@ -5721,14 +5198,14 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfFirstLineDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
@@ -5746,11 +5223,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "inner join person pe on pg.patient_id = pe.person_id "
 								+ "inner join patient pa on pg.patient_id = pa.patient_id "
 								+ "inner join orders ord on pg.patient_id = ord.patient_id "
-								+ "inner join drug_order do on ord.order_id = do.order_id "
-								/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfSecondLineDrugs()
-								+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+								+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 								+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
 								+ endDate
 								+ "'"
@@ -5761,79 +5236,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 				if (patientIds2.size() == 0) {
 
-					SQLQuery queryExited = session
-							.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-									+ Integer.parseInt(GlobalProperties
-											.gpGetExitFromCareConceptId())
-									+ " and (cast(o.obs_datetime as DATE)) <= '"
-									+ endDate
-									+ "' and o.voided = 0 and o.person_id="
-									+ patientId);
+					patientIdsList.add(patientId);
 
-					List<Integer> patientIds3 = queryExited.list();
-
-					if (patientIds3.size() == 0) {
-
-						/*SQLQuery queryDate1 = session
-								.createSQLQuery("select cast(max(encounter_datetime)as DATE) from encounter where "
-										+ "(select(cast(max(encounter_datetime)as Date))) <= '"
-										+ endDate
-										+ "' and (select cast(max(encounter_datetime)as DATE)) is not null and voided = 0 and patient_id = "
-										+ patientId);
-
-						List<Date> maxEnocunterDateTime = queryDate1.list();
-
-						SQLQuery queryDate2 = session
-								.createSQLQuery("select cast(max(value_datetime) as DATE ) "
-										+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
-										+ endDate
-										+ "' and concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetReturnVisitDateConceptId())
-										+ " and (select cast(max(value_datetime) as DATE )) is not null and voided = 0 and person_id = "
-										+ patientId);
-
-						List<Date> maxReturnVisitDay = queryDate2.list();
-
-						if (((maxReturnVisitDay.get(0)) != null)
-								&& (maxEnocunterDateTime.get(0) != null)) {
-
-							if (((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-									.getTime() && (maxEnocunterDateTime.get(0)
-									.getTime()) <= newEndDate.getTime())
-									|| ((maxReturnVisitDay.get(0).getTime()) >= threeMonthsBeforeEndDate
-											.getTime() && (maxReturnVisitDay
-											.get(0).getTime()) <= newEndDate
-											.getTime())) {
-
-								patientIdsList.add(patientId);
-
-							}
-						}
-
-						else if (((maxReturnVisitDay.get(0)) == null)
-								&& (maxEnocunterDateTime.get(0) != null)) {
-
-							if ((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-									.getTime()
-									&& (maxEnocunterDateTime.get(0).getTime()) <= newEndDate
-											.getTime()) {
-
-								patientIdsList.add(patientId);
-
-							}
-						} else if (((maxReturnVisitDay.get(0) != null))
-								&& (maxReturnVisitDay.get(0).getTime() > newEndDate
-										.getTime()))
-
-						{*/
-							patientIdsList.add(patientId);
-
-						}
-					}
 				}
-			//}
+			}
+
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
 			}
@@ -5861,12 +5268,6 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 		ArrayList<Person> patients = new ArrayList<Person>();
 
-		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
-
-		Date newEndDate = df.parse(endDate);
-
-		Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
-
 		Session session = getSessionFactory2().getCurrentSession();
 
 		try {
@@ -5876,14 +5277,14 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
 							+ "  and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfSecondLineDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
 							+ endDate
 							+ "' and pg.program_id= "
@@ -5895,77 +5296,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 			for (Integer patientId : patientIds1) {
 
-				SQLQuery query2Date = session
-						.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-								+ Integer.parseInt(GlobalProperties
-										.gpGetExitFromCareConceptId())
-								+ " and (cast(o.obs_datetime as DATE)) <= '"
-								+ endDate
-								+ "' and o.voided = 0 and o.person_id="
-								+ patientId);
+				patientIdsList.add(patientId);
 
-				List<Integer> patientIds3 = query2Date.list();
-
-				if (patientIds3.size() == 0) {
-					// try {
-
-					/*SQLQuery queryDate1 = session
-							.createSQLQuery("select cast(max(encounter_datetime)as DATE) from encounter where "
-									+ "(select(cast(max(encounter_datetime)as Date))) <= '"
-									+ endDate
-									+ "' and (select cast(max(encounter_datetime)as DATE)) is not null and voided = 0 and patient_id = "
-									+ patientId);
-
-					List<Date> maxEnocunterDateTime = queryDate1.list();
-
-					SQLQuery queryDate2 = session
-							.createSQLQuery("select cast(max(value_datetime) as DATE ) "
-									+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
-									+ endDate
-									+ "' and concept_id = "
-									+ Integer.parseInt(GlobalProperties
-											.gpGetReturnVisitDateConceptId())
-									+ " and (select cast(max(value_datetime) as DATE )) is not null and voided = 0 and person_id = "
-									+ patientId);
-
-					List<Date> maxReturnVisitDay = queryDate2.list();
-
-					if (((maxReturnVisitDay.get(0)) != null)
-							&& (maxEnocunterDateTime.get(0) != null)) {
-
-						if (((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-								.getTime() && (maxEnocunterDateTime.get(0)
-								.getTime()) <= newEndDate.getTime())
-								|| ((maxReturnVisitDay.get(0).getTime()) >= threeMonthsBeforeEndDate
-										.getTime() && (maxReturnVisitDay.get(0)
-										.getTime()) <= newEndDate.getTime())) {
-
-							patientIdsList.add(patientId);
-
-						}
-					}
-
-					else if (((maxReturnVisitDay.get(0)) == null)
-							&& (maxEnocunterDateTime.get(0) != null)) {
-
-						if ((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-								.getTime()
-								&& (maxEnocunterDateTime.get(0).getTime()) <= newEndDate
-										.getTime()) {
-
-							patientIdsList.add(patientId);
-
-						}
-					} else if (((maxReturnVisitDay.get(0) != null))
-							&& (maxReturnVisitDay.get(0).getTime() > newEndDate
-									.getTime()))
-
-					{*/
-						patientIdsList.add(patientId);
-
-					}
-				}
-			//}
+			}
 
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
@@ -5995,11 +5328,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 		ArrayList<Person> patients = new ArrayList<Person>();
 
-		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
-
-		Date newEndDate = df.parse(endDate);
-
-		Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
+		//SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
 
 		Session session = getSessionFactory2().getCurrentSession();
 
@@ -6010,14 +5339,14 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 < 2 "
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
@@ -6030,76 +5359,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 			for (Integer patientId : patientIds1) {
 
-				SQLQuery queryExited = session
-						.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-								+ Integer.parseInt(GlobalProperties
-										.gpGetExitFromCareConceptId())
-								+ " and (cast(o.obs_datetime as DATE)) <= '"
-								+ endDate
-								+ "' and o.voided = 0 and o.person_id="
-								+ patientId);
+				patientIdsList.add(patientId);
 
-				List<Integer> patientIds3 = queryExited.list();
-
-				if (patientIds3.size() == 0) {
-
-					/*SQLQuery queryDate1 = session
-							.createSQLQuery("select cast(max(encounter_datetime)as DATE) from encounter where "
-									+ "(select(cast(max(encounter_datetime)as Date))) <= '"
-									+ endDate
-									+ "' and (select cast(max(encounter_datetime)as DATE)) is not null and voided = 0 and patient_id = "
-									+ patientId);
-
-					List<Date> maxEnocunterDateTime = queryDate1.list();
-
-					SQLQuery queryDate2 = session
-							.createSQLQuery("select cast(max(value_datetime) as DATE ) "
-									+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
-									+ endDate
-									+ "' and concept_id = "
-									+ Integer.parseInt(GlobalProperties
-											.gpGetReturnVisitDateConceptId())
-									+ " and (select cast(max(value_datetime) as DATE )) is not null and voided = 0 and person_id = "
-									+ patientId);
-
-					List<Date> maxReturnVisitDay = queryDate2.list();
-
-					if (((maxReturnVisitDay.get(0)) != null)
-							&& (maxEnocunterDateTime.get(0) != null)) {
-
-						if (((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-								.getTime() && (maxEnocunterDateTime.get(0)
-								.getTime()) <= newEndDate.getTime())
-								|| ((maxReturnVisitDay.get(0).getTime()) >= threeMonthsBeforeEndDate
-										.getTime() && (maxReturnVisitDay.get(0)
-										.getTime()) <= newEndDate.getTime())) {
-
-							patientIdsList.add(patientId);
-
-						}
-					}
-
-					else if (((maxReturnVisitDay.get(0)) == null)
-							&& (maxEnocunterDateTime.get(0) != null)) {
-
-						if ((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-								.getTime()
-								&& (maxEnocunterDateTime.get(0).getTime()) <= newEndDate
-										.getTime()) {
-
-							patientIdsList.add(patientId);
-
-						}
-					} else if (((maxReturnVisitDay.get(0) != null))
-							&& (maxReturnVisitDay.get(0).getTime() > newEndDate
-									.getTime()))
-
-					{*/
-						patientIdsList.add(patientId);
-
-					}
-				}
-			//}
+			}
 
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
@@ -6129,11 +5391,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 		ArrayList<Person> patients = new ArrayList<Person>();
 
-		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
-
-		Date newEndDate = df.parse(endDate);
-
-		Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
+		//SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
 
 		Session session = getSessionFactory2().getCurrentSession();
 
@@ -6144,14 +5402,14 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 4 "
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
@@ -6164,76 +5422,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 			for (Integer patientId : patientIds1) {
 
-				SQLQuery queryExited = session
-						.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-								+ Integer.parseInt(GlobalProperties
-										.gpGetExitFromCareConceptId())
-								+ " and (cast(o.obs_datetime as DATE)) <= '"
-								+ endDate
-								+ "' and o.voided = 0 and o.person_id="
-								+ patientId);
+				patientIdsList.add(patientId);
 
-				List<Integer> patientIds3 = queryExited.list();
+			}
 
-				if (patientIds3.size() == 0) {
-
-					/*SQLQuery queryDate1 = session
-							.createSQLQuery("select cast(max(encounter_datetime)as DATE) from encounter where "
-									+ "(select(cast(max(encounter_datetime)as Date))) <= '"
-									+ endDate
-									+ "' and (select cast(max(encounter_datetime)as DATE)) is not null and voided = 0 and patient_id = "
-									+ patientId);
-
-					List<Date> maxEnocunterDateTime = queryDate1.list();
-
-					SQLQuery queryDate2 = session
-							.createSQLQuery("select cast(max(value_datetime) as DATE ) "
-									+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
-									+ endDate
-									+ "' and concept_id = "
-									+ Integer.parseInt(GlobalProperties
-											.gpGetReturnVisitDateConceptId())
-									+ " and (select cast(max(value_datetime) as DATE )) is not null and voided = 0 and person_id = "
-									+ patientId);
-
-					List<Date> maxReturnVisitDay = queryDate2.list();
-
-					if (((maxReturnVisitDay.get(0)) != null)
-							&& (maxEnocunterDateTime.get(0) != null)) {
-
-						if (((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-								.getTime() && (maxEnocunterDateTime.get(0)
-								.getTime()) <= newEndDate.getTime())
-								|| ((maxReturnVisitDay.get(0).getTime()) >= threeMonthsBeforeEndDate
-										.getTime() && (maxReturnVisitDay.get(0)
-										.getTime()) <= newEndDate.getTime())) {
-
-							patientIdsList.add(patientId);
-
-						}
-					}
-
-					else if (((maxReturnVisitDay.get(0)) == null)
-							&& (maxEnocunterDateTime.get(0) != null)) {
-
-						if ((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-								.getTime()
-								&& (maxEnocunterDateTime.get(0).getTime()) <= newEndDate
-										.getTime()) {
-
-							patientIdsList.add(patientId);
-
-						}
-					} else if (((maxReturnVisitDay.get(0) != null))
-							&& (maxReturnVisitDay.get(0).getTime() > newEndDate
-									.getTime()))
-
-					{*/
-						patientIdsList.add(patientId);
-
-					}
-				}
-			//}
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
 			}
@@ -6318,13 +5510,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 					SQLQuery queryOpportunisticInfectionTB = session
 							.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-									+ Integer
-											.parseInt(GlobalProperties
-													.gpGetOpportunisticInfectionsConceptId())
+									+ Integer.parseInt(GlobalProperties
+											.gpGetOpportunisticInfectionsConceptId())
 									+ " and o.value_coded = "
-									+ Integer
-											.parseInt(GlobalProperties
-													.gpGetOpportunisticInfectionTBConceptId())
+									+ Integer.parseInt(GlobalProperties
+											.gpGetOpportunisticInfectionTBConceptId())
 									+ " and (cast(o.obs_datetime as DATE)) <= '"
 									+ endDate
 									+ "' and o.voided = 0 and o.person_id="
@@ -6337,9 +5527,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 						SQLQuery queryDate = session
 								.createSQLQuery("select cast(obs_datetime as DATE) from obs where concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetOpportunisticInfectionsConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetOpportunisticInfectionsConceptId())
 										+ " and (select cast(obs_datetime as DATE)) is not null and voided = 0 and person_id = "
 										+ patientId);
 
@@ -6433,9 +5622,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 					SQLQuery queryDate = session
 							.createSQLQuery("select cast(obs_datetime as DATE) from obs where concept_id = "
-									+ Integer
-											.parseInt(GlobalProperties
-													.gpGetEndDateOfOpportunisticInfectionSTIConceptId())
+									+ Integer.parseInt(GlobalProperties
+											.gpGetEndDateOfOpportunisticInfectionSTIConceptId())
 									+ " and (select cast(obs_datetime as DATE)) is not null and voided = 0 and person_id = "
 									+ patientId);
 
@@ -6475,16 +5663,15 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
-	
-	public List<Person> numberOfPatientsWhoReceivedFollowUpAndAdherenceCounselling(String startDate,
-			String endDate) {
+
+	public List<Person> numberOfPatientsWhoReceivedFollowUpAndAdherenceCounselling(
+			String startDate, String endDate) {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
-	public List<Person> numberOfPatientsWhoReceivedFamilyPlanningThisMonth(String startDate,
-			String endDate) {
+
+	public List<Person> numberOfPatientsWhoReceivedFamilyPlanningThisMonth(
+			String startDate, String endDate) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -6705,9 +5892,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 						SQLQuery queryHIVResultDate = session
 								.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetResultForHIVTestConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetResultForHIVTestConceptId())
 										+ " and o.value_coded in ("
 										+ GlobalProperties
 												.gpGetListOfAnswersToResultOfHIVTest()
@@ -6724,9 +5910,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryHIVResultConcept = session
 									.createSQLQuery("select o.value_coded from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and o.value_coded in ("
 											+ GlobalProperties
 													.gpGetListOfAnswersToResultOfHIVTest()
@@ -6885,9 +6070,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 						SQLQuery queryHIVResultDate = session
 								.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetResultForHIVTestConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetResultForHIVTestConceptId())
 										+ " and o.value_coded IN ("
 										+ GlobalProperties
 												.gpGetListOfAnswersToResultOfHIVTest()
@@ -6902,9 +6086,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryHIVResultDatePartner = session
 									.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetTestingStatusOfPartnerConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetTestingStatusOfPartnerConceptId())
 											+ " and o.value_coded IN ("
 											+ GlobalProperties
 													.gpGetListOfAnswersToResultOfHIVTest()
@@ -7074,9 +6257,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 						SQLQuery queryHIVResultDate = session
 								.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetResultForHIVTestConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetResultForHIVTestConceptId())
 										+ " and o.value_coded IN ("
 										+ GlobalProperties
 												.gpGetListOfAnswersToResultOfHIVTest()
@@ -7091,9 +6273,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryHIVResultDatePartner = session
 									.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetTestingStatusOfPartnerConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetTestingStatusOfPartnerConceptId())
 											+ " and o.value_coded IN ("
 											+ GlobalProperties
 													.gpGetListOfAnswersToResultOfHIVTest()
@@ -7205,9 +6386,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join obs ob on pe.person_id = ob.person_id "
 							+ "inner join patient_program pg on pe.person_id = pg.patient_id "
 							+ "where pe.gender = 'f' and ob.concept_id = "
-							+ Integer
-									.parseInt(GlobalProperties
-											.gpGetDateResultOfHIVTestReceivedConceptId())
+							+ Integer.parseInt(GlobalProperties
+									.gpGetDateResultOfHIVTestReceivedConceptId())
 							+ " and (cast(ob.obs_datetime as DATE)) >= '"
 							+ startDate
 							+ "' AND (cast(ob.obs_datetime as DATE)) <= '"
@@ -7238,9 +6418,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 					SQLQuery queryHIVResultReceivedDate = session
 							.createSQLQuery("select cast(min(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-									+ Integer
-											.parseInt(GlobalProperties
-													.gpGetDateResultOfHIVTestReceivedConceptId())
+									+ Integer.parseInt(GlobalProperties
+											.gpGetDateResultOfHIVTestReceivedConceptId())
 									+ " and (select cast(min(o.obs_datetime)as DATE)) is not null and o.voided = 0 and o.person_id="
 									+ patientId);
 					List<Date> HivTestResultReceivedDate = queryHIVResultReceivedDate
@@ -7257,9 +6436,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 									.createSQLQuery("select distinct pe.person_id from person pe "
 											+ "inner join obs ob on pe.person_id = ob.person_id "
 											+ "where ob.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and ob.value_coded in ("
 											+ GlobalProperties
 													.gpGetListOfAnswersToResultOfHIVTest()
@@ -7556,9 +6734,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					if (patientIds3.size() != 0) {
 						SQLQuery queryHIVResultDate = session
 								.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetResultForHIVTestConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetResultForHIVTestConceptId())
 										+ " and o.value_coded in ("
 										+ GlobalProperties
 												.gpGetListOfAnswersToResultOfHIVTest()
@@ -7718,7 +6895,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 												+ "inner join obs o on pe.person_id = o.person_id "
 												+ "inner join orders ord on pg.patient_id = ord.patient_id "
 												+ "inner join drug_order do on ord.order_id = do.order_id "
-												/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+												/*
+												 * +
+												 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+												 */
 												+ "where ord.concept_id IN ("
 												+ GlobalProperties
 														.gpGetListOfARVsDrugs()
@@ -7832,9 +7012,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					if (patientIds3.size() != 0) {
 						SQLQuery queryHIVResultDate = session
 								.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetResultForHIVTestConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetResultForHIVTestConceptId())
 										+ " and o.value_coded in ("
 										+ GlobalProperties
 												.gpGetListOfAnswersToResultOfHIVTest()
@@ -7878,7 +7057,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 										SQLQuery queryMinStartDate = session
 												.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
 														+ " inner join drug_order do on ord.order_id = do.order_id "
-														/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+														/*
+														 * +
+														 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+														 */
 														+ " where ord.concept_id IN ("
 														+ GlobalProperties
 																.gpGetListOfARVsDrugs()
@@ -8079,9 +7261,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 					SQLQuery queryCD4CountTest = session
 							.createSQLQuery("select cast(max(o.obs_datetime) as DATE) from obs o where o.concept_id = "
-									+ Integer
-											.parseInt(GlobalProperties
-													.gpGetRapidPlasminReagentConceptId())
+									+ Integer.parseInt(GlobalProperties
+											.gpGetRapidPlasminReagentConceptId())
 									+ " and o.value_coded IN ("
 									+ GlobalProperties
 											.gpGetListOfAnswersToRapidPlasminReagent()
@@ -8098,9 +7279,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryHIVResult = session
 									.createSQLQuery("select o.value_coded from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetRapidPlasminReagentConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetRapidPlasminReagentConceptId())
 											+ " and o.value_coded IN ("
 											+ GlobalProperties
 													.gpGetListOfAnswersToRapidPlasminReagent()
@@ -8162,9 +7342,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					.createSQLQuery("select distinct pe.person_id from person pe "
 							+ "inner join obs ob on pe.person_id = ob.person_id "
 							+ "where pe.gender = 'f' and ob.concept_id = "
-							+ Integer
-									.parseInt(GlobalProperties
-											.gpGetDateResultOfHIVTestReceivedConceptId())
+							+ Integer.parseInt(GlobalProperties
+									.gpGetDateResultOfHIVTestReceivedConceptId())
 							+ " and (cast(ob.obs_datetime as DATE)) >= '"
 							+ startDate
 							+ "' AND (cast(ob.obs_datetime as DATE)) <= '"
@@ -8192,9 +7371,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 					SQLQuery queryHIVResultReceivedDate = session
 							.createSQLQuery("select cast(min(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-									+ Integer
-											.parseInt(GlobalProperties
-													.gpGetDateResultOfHIVTestReceivedConceptId())
+									+ Integer.parseInt(GlobalProperties
+											.gpGetDateResultOfHIVTestReceivedConceptId())
 									+ " and (select cast(min(o.obs_datetime)as DATE)) is not null and o.voided = 0 and o.person_id="
 									+ patientId);
 					List<Date> HivTestResultReceivedDate = queryHIVResultReceivedDate
@@ -8211,9 +7389,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 									.createSQLQuery("select distinct pe.person_id from person pe "
 											+ "inner join obs ob on pe.person_id = ob.person_id "
 											+ "where ob.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and ob.value_coded in ("
 											+ GlobalProperties
 													.gpGetListOfAnswersToResultOfHIVTest()
@@ -8363,9 +7540,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 											+ "inner join person pe on pg.patient_id = pe.person_id "
 											+ "inner join patient pa on pg.patient_id = pa.patient_id "
 											+ "where ob.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and (cast(ob.obs_datetime as DATE)) <= '"
 											+ endDate
 											+ "' and ob.value_coded IN ("
@@ -8524,9 +7700,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 											+ "inner join person pe on pg.patient_id = pe.person_id "
 											+ "inner join patient pa on pg.patient_id = pa.patient_id "
 											+ "where ob.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and (cast(ob.obs_datetime as DATE)) <= '"
 											+ endDate
 											+ "' and ob.value_coded IN ("
@@ -8660,9 +7835,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 					SQLQuery queryRPRTest = session
 							.createSQLQuery("select cast(max(o.obs_datetime) as DATE) from obs o where o.concept_id = "
-									+ Integer
-											.parseInt(GlobalProperties
-													.gpGetRapidPlasminReagentConceptId())
+									+ Integer.parseInt(GlobalProperties
+											.gpGetRapidPlasminReagentConceptId())
 									+ " and (select cast(max(o.obs_datetime) as DATE)) is not null and o.voided  = 0 and o.person_id= "
 									+ patientId);
 					List<Date> rprTestDate = queryRPRTest.list();
@@ -8769,9 +7943,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 											+ "inner join obs ob on pe.person_id = ob.person_id "
 											+ "inner join patient pa on pe.person_id = pa.patient_id "
 											+ "where ob.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and voided = 0 and pe.person_id = "
 											+ patientId);
 
@@ -8922,9 +8095,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ Integer.parseInt(GlobalProperties
 									.gpGetCPNEncounterId())
 							+ " and ob.concept_id = "
-							+ Integer
-									.parseInt(GlobalProperties
-											.gpGetEstimatedDateOfConfinementConceptId())
+							+ Integer.parseInt(GlobalProperties
+									.gpGetEstimatedDateOfConfinementConceptId())
 							+ " and (cast(ob.value_datetime as DATE)) >= '"
 							+ startDate
 							+ "' AND (cast(ob.value_datetime as DATE)) <= '"
@@ -8973,9 +8145,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 						SQLQuery queryEstimatedDateOfDelivery = session
 								.createSQLQuery("select cast(max(o.value_datetime)as DATE) from obs o where o.concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetEstimatedDateOfConfinementConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetEstimatedDateOfConfinementConceptId())
 										+ " and (select cast(max(o.value_datetime)as DATE)) is not null and o.voided= 0 and o.person_id= "
 										+ patientId);
 						List<Date> estimateDateOfDelivery = queryEstimatedDateOfDelivery
@@ -9109,9 +8280,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ Integer.parseInt(GlobalProperties
 									.gpGetCPNEncounterId())
 							+ " and ob.concept_id = "
-							+ Integer
-									.parseInt(GlobalProperties
-											.gpGetEstimatedDateOfConfinementConceptId())
+							+ Integer.parseInt(GlobalProperties
+									.gpGetEstimatedDateOfConfinementConceptId())
 							+ " and (cast(ob.value_datetime as DATE)) >= '"
 							+ startDate
 							+ "' AND (cast(ob.value_datetime as DATE)) <= '"
@@ -9160,9 +8330,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 						SQLQuery queryEstimatedDateOfDelivery = session
 								.createSQLQuery("select cast(max(o.value_datetime)as DATE) from obs o where o.concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetEstimatedDateOfConfinementConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetEstimatedDateOfConfinementConceptId())
 										+ " and (select cast(max(o.value_datetime)as DATE)) is not null and o.voided = 0 and o.person_id= "
 										+ patientId);
 						List<Date> estimateDateOfDelivery = queryEstimatedDateOfDelivery
@@ -9402,9 +8571,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 											+ "inner join person pe on pg.patient_id = pe.person_id "
 											+ "inner join patient pa on pg.patient_id = pa.patient_id "
 											+ "where ob.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and (cast(ob.obs_datetime as DATE)) <= '"
 											+ endDate
 											+ "' and ob.value_coded IN ("
@@ -9548,9 +8716,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 					SQLQuery queryHIVTestInDeliveryRoom = session
 							.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-									+ Integer
-											.parseInt(GlobalProperties
-													.gpGetHIVTestInDeliveryRoomConceptId())
+									+ Integer.parseInt(GlobalProperties
+											.gpGetHIVTestInDeliveryRoomConceptId())
 									+ " and (select cast(max(o.obs_datetime)as DATE)) is not null and o.voided = 0 and o.value_numeric = 1 and o.person_id= "
 									+ patientId);
 					List<Date> testInDeliveryRoomDate = queryHIVTestInDeliveryRoom
@@ -9565,9 +8732,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryHIVTest = session
 									.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and o.obs_datetime < '"
 											+ testInDeliveryRoomDate.get(0)
 											+ "' and o.voided = 0 and o.person_id="
@@ -9650,9 +8816,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 					SQLQuery queryHIVTestInDeliveryRoom = session
 							.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-									+ Integer
-											.parseInt(GlobalProperties
-													.gpGetHIVTestInDeliveryRoomConceptId())
+									+ Integer.parseInt(GlobalProperties
+											.gpGetHIVTestInDeliveryRoomConceptId())
 									+ " and (select cast(max(o.obs_datetime)as DATE)) is not null and o.voided = 0 and o.value_numeric = 1 and o.person_id= "
 									+ patientId);
 					List<Date> testInDeliveryRoomDate = queryHIVTestInDeliveryRoom
@@ -9667,9 +8832,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryHIVTest = session
 									.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and o.obs_datetime < '"
 											+ testInDeliveryRoomDate.get(0)
 											+ "' and o.voided = 0 and o.person_id="
@@ -10120,9 +9284,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					if (patientIds3.size() != 0) {
 						SQLQuery queryHIVResultDate = session
 								.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetResultForHIVTestConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetResultForHIVTestConceptId())
 										+ " and o.value_coded in ("
 										+ GlobalProperties
 												.gpGetListOfAnswersToResultOfHIVTest()
@@ -10137,9 +9300,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryHIVResultConcept = session
 									.createSQLQuery("select o.value_coded from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and o.value_coded in ("
 											+ GlobalProperties
 													.gpGetListOfAnswersToResultOfHIVTest()
@@ -10310,9 +9472,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					if (patientIds3.size() != 0) {
 						SQLQuery queryHIVResultDate = session
 								.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetResultForHIVTestConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetResultForHIVTestConceptId())
 										+ " and o.value_coded in ("
 										+ GlobalProperties
 												.gpGetListOfAnswersToResultOfHIVTest()
@@ -10327,9 +9488,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryHIVResultConcept = session
 									.createSQLQuery("select o.value_coded from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and o.value_coded in ("
 											+ GlobalProperties
 													.gpGetListOfAnswersToResultOfHIVTest()
@@ -10751,9 +9911,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					if (patientIds3.size() != 0) {
 						SQLQuery queryHIVResultDate = session
 								.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetResultForHIVTestConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetResultForHIVTestConceptId())
 										+ " and o.value_coded in ("
 										+ GlobalProperties
 												.gpGetListOfAnswersToResultOfHIVTest()
@@ -10768,9 +9927,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryHIVResultConcept = session
 									.createSQLQuery("select o.value_coded from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and o.value_coded in ("
 											+ GlobalProperties
 													.gpGetListOfAnswersToResultOfHIVTest()
@@ -11020,13 +10178,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 																			.list();
 
 																	if ((HIVResultDateForInfantTested
-																			.get(
-																					0)
+																			.get(0)
 																			.getTime() >= newStartDate
 																			.getTime())
 																			&& (HIVResultDateForInfantTested
-																					.get(
-																							0)
+																					.get(0)
 																					.getTime() <= newEndDate
 																					.getTime())) {
 
@@ -11130,9 +10286,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					if (patientIds3.size() != 0) {
 						SQLQuery queryHIVResultDate = session
 								.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetResultForHIVTestConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetResultForHIVTestConceptId())
 										+ " and o.value_coded in ("
 										+ GlobalProperties
 												.gpGetListOfAnswersToResultOfHIVTest()
@@ -11147,9 +10302,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryHIVResultConcept = session
 									.createSQLQuery("select o.value_coded from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and o.value_coded in ("
 											+ GlobalProperties
 													.gpGetListOfAnswersToResultOfHIVTest()
@@ -11381,13 +10535,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 																		.size() != 0) {
 
 																	if ((infantInPMTCTTestedAt18Months
-																			.get(
-																					0)
+																			.get(0)
 																			.getTime() >= newStartDate
 																			.getTime())
 																			&& (infantInPMTCTTestedAt18Months
-																					.get(
-																							0)
+																					.get(0)
 																					.getTime() <= newEndDate
 																					.getTime())) {
 
@@ -11492,9 +10644,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					if (patientIds3.size() != 0) {
 						SQLQuery queryHIVResultDate = session
 								.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetResultForHIVTestConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetResultForHIVTestConceptId())
 										+ " and o.value_coded in ("
 										+ GlobalProperties
 												.gpGetListOfAnswersToResultOfHIVTest()
@@ -11509,9 +10660,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryHIVResultConcept = session
 									.createSQLQuery("select o.value_coded from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and o.value_coded in ("
 											+ GlobalProperties
 													.gpGetListOfAnswersToResultOfHIVTest()
@@ -11743,13 +10893,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 																		.size() != 0) {
 
 																	if ((infantInPMTCTTestedAt6Weeks
-																			.get(
-																					0)
+																			.get(0)
 																			.getTime() >= newStartDate
 																			.getTime())
 																			&& (infantInPMTCTTestedAt6Weeks
-																					.get(
-																							0)
+																					.get(0)
 																					.getTime() <= newEndDate
 																					.getTime())) {
 
@@ -11854,9 +11002,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					if (patientIds3.size() != 0) {
 						SQLQuery queryHIVResultDate = session
 								.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetResultForHIVTestConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetResultForHIVTestConceptId())
 										+ " and o.value_coded in ("
 										+ GlobalProperties
 												.gpGetListOfAnswersToResultOfHIVTest()
@@ -11871,9 +11018,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryHIVResultConcept = session
 									.createSQLQuery("select o.value_coded from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and o.value_coded in ("
 											+ GlobalProperties
 													.gpGetListOfAnswersToResultOfHIVTest()
@@ -12105,13 +11251,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 																		.size() != 0) {
 
 																	if ((infantInPMTCTTestedAt9Months
-																			.get(
-																					0)
+																			.get(0)
 																			.getTime() >= newStartDate
 																			.getTime())
 																			&& (infantInPMTCTTestedAt9Months
-																					.get(
-																							0)
+																					.get(0)
 																					.getTime() <= newEndDate
 																					.getTime())) {
 
@@ -12216,9 +11360,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					if (patientIds3.size() != 0) {
 						SQLQuery queryHIVResultDate = session
 								.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetResultForHIVTestConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetResultForHIVTestConceptId())
 										+ " and o.value_coded in ("
 										+ GlobalProperties
 												.gpGetListOfAnswersToResultOfHIVTest()
@@ -12233,9 +11376,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryHIVResultConcept = session
 									.createSQLQuery("select o.value_coded from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and o.value_coded in ("
 											+ GlobalProperties
 													.gpGetListOfAnswersToResultOfHIVTest()
@@ -12537,13 +11679,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 																			.list();
 
 																	if ((HIVResultDateForInfantTested
-																			.get(
-																					0)
+																			.get(0)
 																			.getTime() >= newStartDate
 																			.getTime())
 																			&& (HIVResultDateForInfantTested
-																					.get(
-																							0)
+																					.get(0)
 																					.getTime() <= newEndDate
 																					.getTime())) {
 
@@ -12673,9 +11813,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					if (patientIds3.size() != 0) {
 						SQLQuery queryHIVResultDate = session
 								.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetResultForHIVTestConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetResultForHIVTestConceptId())
 										+ " and o.value_coded in ("
 										+ GlobalProperties
 												.gpGetListOfAnswersToResultOfHIVTest()
@@ -12690,9 +11829,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryHIVResultConcept = session
 									.createSQLQuery("select o.value_coded from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and o.value_coded in ("
 											+ GlobalProperties
 													.gpGetListOfAnswersToResultOfHIVTest()
@@ -12994,13 +12132,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 																			.list();
 
 																	if ((HIVResultDateForInfantTested
-																			.get(
-																					0)
+																			.get(0)
 																			.getTime() >= newStartDate
 																			.getTime())
 																			&& (HIVResultDateForInfantTested
-																					.get(
-																							0)
+																					.get(0)
 																					.getTime() <= newEndDate
 																					.getTime())) {
 
@@ -13131,9 +12267,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					if (patientIds3.size() != 0) {
 						SQLQuery queryHIVResultDate = session
 								.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetResultForHIVTestConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetResultForHIVTestConceptId())
 										+ " and o.value_coded in ("
 										+ GlobalProperties
 												.gpGetListOfAnswersToResultOfHIVTest()
@@ -13148,9 +12283,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryHIVResultConcept = session
 									.createSQLQuery("select o.value_coded from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and o.value_coded in ("
 											+ GlobalProperties
 													.gpGetListOfAnswersToResultOfHIVTest()
@@ -13452,13 +12586,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 																			.list();
 
 																	if ((HIVResultDateForInfantTested
-																			.get(
-																					0)
+																			.get(0)
 																			.getTime() >= newStartDate
 																			.getTime())
 																			&& (HIVResultDateForInfantTested
-																					.get(
-																							0)
+																					.get(0)
 																					.getTime() <= newEndDate
 																					.getTime())) {
 
@@ -13609,9 +12741,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					if (patientIds3.size() != 0) {
 						SQLQuery queryHIVResultDate = session
 								.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetResultForHIVTestConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetResultForHIVTestConceptId())
 										+ " and o.value_coded in ("
 										+ GlobalProperties
 												.gpGetListOfAnswersToResultOfHIVTest()
@@ -13626,9 +12757,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryHIVResultConcept = session
 									.createSQLQuery("select o.value_coded from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and o.value_coded in ("
 											+ GlobalProperties
 													.gpGetListOfAnswersToResultOfHIVTest()
@@ -13872,8 +13002,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 																	.getTime() >= newStartDate
 																	.getTime())
 																	&& (HIVResultDateForInfantDied
-																			.get(
-																					0)
+																			.get(0)
 																			.getTime() <= newEndDate
 																			.getTime())) {
 
@@ -13986,9 +13115,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 											+ "inner join person pe on pg.patient_id = pe.person_id "
 											+ "inner join patient pa on pg.patient_id = pa.patient_id "
 											+ "where ob.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and (cast(ob.obs_datetime as DATE)) <= '"
 											+ endDate
 											+ "' and ob.value_coded IN ("
@@ -14180,9 +13308,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 											+ "inner join person pe on pg.patient_id = pe.person_id "
 											+ "inner join patient pa on pg.patient_id = pa.patient_id "
 											+ "where ob.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and (cast(ob.obs_datetime as DATE)) <= '"
 											+ endDate
 											+ "' and ob.value_coded IN ("
@@ -14311,9 +13438,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ Integer.parseInt(GlobalProperties
 										.gpGetResultForHIVTestConceptId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetPositiveAsResultToHIVTestConceptId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetPositiveAsResultToHIVTestConceptId())
 								+ "'  ").list();
 		List<Integer> personExpectedAtFacilityIds = session
 				.createSQLQuery(
@@ -14376,9 +13502,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ Integer.parseInt(GlobalProperties
 										.gpGetResultForHIVTestConceptId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetPositiveAsResultToHIVTestConceptId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetPositiveAsResultToHIVTestConceptId())
 								+ "'  ").list();
 		List<Integer> patientInProgramIds = session
 				.createSQLQuery(
@@ -14444,9 +13569,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ Integer.parseInt(GlobalProperties
 										.gpGetResultForHIVTestConceptId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetPositiveAsResultToHIVTestConceptId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetPositiveAsResultToHIVTestConceptId())
 								+ "' ").list();
 		List<Integer> patientInProgramIds = session
 				.createSQLQuery(
@@ -14525,9 +13649,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ Integer.parseInt(GlobalProperties
 										.gpGetResultForHIVTestConceptId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetPositiveAsResultToHIVTestConceptId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetPositiveAsResultToHIVTestConceptId())
 								+ "' and p.voided=false").list();
 		List<Integer> patientInProgramIds = session
 				.createSQLQuery(
@@ -14601,9 +13724,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ Integer.parseInt(GlobalProperties
 										.gpGetResultForHIVTestConceptId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetPositiveAsResultToHIVTestConceptId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetPositiveAsResultToHIVTestConceptId())
 								+ "' and p.voided=false ").list();
 		List<Integer> personReferredForFpIds = session
 				.createSQLQuery(
@@ -14782,9 +13904,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ Integer.parseInt(GlobalProperties
 										.gpGetResultForHIVTestConceptId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetPositiveAsResultToHIVTestConceptId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetPositiveAsResultToHIVTestConceptId())
 								+ "'  ").list();
 		List<Integer> personCounseled = session
 				.createSQLQuery(
@@ -14841,9 +13962,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ Integer.parseInt(GlobalProperties
 										.gpGetResultForHIVTestConceptId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetPositiveAsResultToHIVTestConceptId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetPositiveAsResultToHIVTestConceptId())
 								+ "'  ").list();
 		List<Integer> personCounseled = session
 				.createSQLQuery(
@@ -14898,9 +14018,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ Integer.parseInt(GlobalProperties
 										.gpGetResultForHIVTestConceptId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetPositiveAsResultToHIVTestConceptId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetPositiveAsResultToHIVTestConceptId())
 								+ "'  ").list();
 		List<Integer> personCounseled = session
 				.createSQLQuery(
@@ -14952,9 +14071,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ Integer.parseInt(GlobalProperties
 										.gpGetResultForHIVTestConceptId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetPositiveAsResultToHIVTestConceptId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetPositiveAsResultToHIVTestConceptId())
 								+ "' ").list();
 		List<Integer> personCounseledAndTestedIds = session
 				.createSQLQuery(
@@ -15012,9 +14130,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ Integer.parseInt(GlobalProperties
 										.gpGetResultForHIVTestConceptId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetPositiveAsResultToHIVTestConceptId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetPositiveAsResultToHIVTestConceptId())
 								+ "'  ").list();
 		List<Integer> personCounseled = session
 				.createSQLQuery(
@@ -15068,9 +14185,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ Integer.parseInt(GlobalProperties
 										.gpGetResultForHIVTestConceptId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetPositiveAsResultToHIVTestConceptId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetPositiveAsResultToHIVTestConceptId())
 								+ "' ").list();
 		List<Integer> personCounseledAndTestedIds = session
 				.createSQLQuery(
@@ -15830,9 +14946,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ Integer.parseInt(GlobalProperties
 										.gpGetResultForHIVTestConceptId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetPositiveAsResultToHIVTestConceptId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetPositiveAsResultToHIVTestConceptId())
 								+ "'  ").list();
 		List<Integer> personCounseled = session
 				.createSQLQuery(
@@ -15997,9 +15112,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ Integer.parseInt(GlobalProperties
 										.gpGetResultForHIVTestConceptId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetPositiveAsResultToHIVTestConceptId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetPositiveAsResultToHIVTestConceptId())
 								+ "'  ").list();
 		List<Integer> personCounseled = session
 				.createSQLQuery(
@@ -16162,9 +15276,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ Integer.parseInt(GlobalProperties
 										.gpGetResultForHIVTestConceptId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetPositiveAsResultToHIVTestConceptId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetPositiveAsResultToHIVTestConceptId())
 								+ "'  ").list();
 		List<Integer> personCounseled = session
 				.createSQLQuery(
@@ -16331,9 +15444,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ Integer.parseInt(GlobalProperties
 										.gpGetResultForHIVTestConceptId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetPositiveAsResultToHIVTestConceptId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetPositiveAsResultToHIVTestConceptId())
 								+ "'  ").list();
 		List<Integer> personCounseled = session
 				.createSQLQuery(
@@ -16498,9 +15610,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ Integer.parseInt(GlobalProperties
 										.gpGetResultForHIVTestConceptId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetPositiveAsResultToHIVTestConceptId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetPositiveAsResultToHIVTestConceptId())
 								+ "'  ").list();
 		List<Integer> personCounseledAndTestedIds = session
 				.createSQLQuery(
@@ -16655,9 +15766,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ Integer.parseInt(GlobalProperties
 										.gpGetResultForHIVTestConceptId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetPositiveAsResultToHIVTestConceptId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetPositiveAsResultToHIVTestConceptId())
 								+ "'  ").list();
 		List<Integer> personCounseledAndTestedIds = session
 				.createSQLQuery(
@@ -16780,13 +15890,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 		List<Integer> personAtRiskExposedIds = session
 				.createSQLQuery(
 						"SELECT DISTINCT p.patient_id from patient p inner join obs o on p.patient_id=o.person_id where p.voided=false and o.concept_id='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetReasonpatientStartedArvsForProphylaxisId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetReasonpatientStartedArvsForProphylaxisId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetExposureToBloodOrBloodProductId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetExposureToBloodOrBloodProductId())
 								+ "' ").list();
 		List<Integer> personOnArvDrugIds = session
 				.createSQLQuery(
@@ -16868,13 +15976,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 		List<Integer> personAtRiskOnPEPIds = session
 				.createSQLQuery(
 						"SELECT distinct p.person_id from person p inner join obs o on p.person_id=o.person_id where p.voided=false and o.concept_id='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetReasonpatientStartedArvsForProphylaxisId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetReasonpatientStartedArvsForProphylaxisId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetExposureToBloodOrBloodProductId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetExposureToBloodOrBloodProductId())
 								+ "' ").list();
 
 		for (Integer personEnrolledInPepPRogramAtRiskOfOcupationExposureId : personEnrolledInPepPRogramAtRiskOfOcupationExposureIds) {
@@ -16889,7 +15995,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 										.equals(personEnrolledInPepId)
 										&& personEnrolledInPepPRogramAtRiskOfOcupationExposureId
 												.equals(patientInEncounterId) && personEnrolledInPepPRogramAtRiskOfOcupationExposureId
-										.equals(patientInProgramId))
+											.equals(patientInProgramId))
 										&& personEnrolledInPepPRogramAtRiskOfOcupationExposureId
 												.equals(personAtRiskOnPEPId)) {
 
@@ -16945,13 +16051,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 		List<Integer> personAtRiskOnPEPIds = session
 				.createSQLQuery(
 						"SELECT DISTINCT p.person_id from person p inner join obs o on p.person_id=o.person_id where p.voided=false and o.concept_id='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetReasonpatientStartedArvsForProphylaxisId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetReasonpatientStartedArvsForProphylaxisId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetExposureToBloodOrBloodProductId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetExposureToBloodOrBloodProductId())
 								+ "' ").list();
 		List<Integer> personOnArvDrug = session
 				.createSQLQuery(
@@ -17042,13 +16146,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 		List<Integer> personAtRiskOnPEPIds = session
 				.createSQLQuery(
 						"SELECT distinct p.person_id from person p inner join obs o on p.person_id=o.person_id where p.voided=false and o.concept_id='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetReasonpatientStartedArvsForProphylaxisId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetReasonpatientStartedArvsForProphylaxisId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetSexualContactWithHivPositivePatient())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetSexualContactWithHivPositivePatient())
 								+ "' ").list();
 
 		for (Integer personEnrolledInPepPRogramAtRiskOfNonOcupationExposureId : personEnrolledInPepPRogramAtRiskOfNonOcupationExposureIds) {
@@ -17063,7 +16165,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 										.equals(personEnrolledInPepId)
 										&& personEnrolledInPepPRogramAtRiskOfNonOcupationExposureId
 												.equals(patientInEncounterId) && personEnrolledInPepPRogramAtRiskOfNonOcupationExposureId
-										.equals(patientInProgramId))
+											.equals(patientInProgramId))
 										&& personEnrolledInPepPRogramAtRiskOfNonOcupationExposureId
 												.equals(personAtRiskOnPEPId)) {
 
@@ -17119,13 +16221,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 		List<Integer> personAtRiskOnPEPIds = session
 				.createSQLQuery(
 						"SELECT DISTINCT p.person_id from person p inner join obs o on p.person_id=o.person_id where p.voided=false and o.concept_id='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetReasonpatientStartedArvsForProphylaxisId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetReasonpatientStartedArvsForProphylaxisId())
 								+ "' and o.value_coded='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetSexualContactWithHivPositivePatient())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetSexualContactWithHivPositivePatient())
 								+ "' ").list();
 		List<Integer> personOnArvDrug = session
 				.createSQLQuery(
@@ -17205,9 +16305,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 		List<Integer> personAtRiskOnPEPIds = session
 				.createSQLQuery(
 						"SELECT distinct p.person_id from person p inner join obs o on p.person_id=o.person_id where p.voided=false and o.concept_id='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetReasonpatientStartedArvsForProphylaxisId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetReasonpatientStartedArvsForProphylaxisId())
 								+ "' and o.value_coded='"
 								+ Integer.parseInt(GlobalProperties
 										.gpGetSexualAssaultId()) + "' ").list();
@@ -17224,7 +16323,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 										.equals(personEnrolledInPepId)
 										&& personEnrolledInPepPRogramAtRiskOfOcupationExposureId
 												.equals(patientInEncounterId) && personEnrolledInPepPRogramAtRiskOfOcupationExposureId
-										.equals(patientInProgramId))
+											.equals(patientInProgramId))
 										&& personEnrolledInPepPRogramAtRiskOfOcupationExposureId
 												.equals(personAtRiskOnPEPId)) {
 
@@ -17326,9 +16425,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 		List<Integer> personAtRiskOnPEPIds = session
 				.createSQLQuery(
 						"SELECT DISTINCT p.person_id from person p inner join obs o on p.person_id=o.person_id where p.voided=false and o.concept_id='"
-								+ Integer
-										.parseInt(GlobalProperties
-												.gpGetReasonpatientStartedArvsForProphylaxisId())
+								+ Integer.parseInt(GlobalProperties
+										.gpGetReasonpatientStartedArvsForProphylaxisId())
 								+ "' and o.value_coded='"
 								+ Integer.parseInt(GlobalProperties
 										.gpGetSexualAssaultId()) + "' ").list();
@@ -17377,7 +16475,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 	/* End Of PEP */
 
 	/**
-	 * @throws ParseException 
+	 * @throws ParseException
 	 * @see org.openmrs.module.tracnetreporting.service.TracNetPatientService#newMaleMoreThanFifteenInHivCare(java.lang.String,
 	 *      java.lang.String)
 	 */
@@ -17395,26 +16493,25 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 		Date newEndDate = df.parse(endDate);
 
 		Date newStartDate = df.parse(startDate);
-		
-		Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
-		
 
+		// Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
 
-	try {
-		
-		Session session = getSessionFactory2().getCurrentSession();
+		try {
 
+			Session session = getSessionFactory2().getCurrentSession();
 
 			SQLQuery query1 = session
 					.createSQLQuery("select distinct pg.patient_id from patient_program pg "
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 > 14 "
 							+ " and pg.voided = 0 and pe.voided = 0 "
 							+ " and pa.voided = 0 and pe.gender = 'M' and pg.date_enrolled >= '"
-							+ startDate 
+							+ startDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
 							+ "' and pg.program_id =  "
@@ -17425,112 +16522,47 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 			for (Integer patientId : patientIds1) {
 
-					SQLQuery queryDateEnrolled = session
-							.createSQLQuery("select cast(max(date_enrolled) as DATE) from patient_program where (select cast(max(date_enrolled) as DATE)) is not null and patient_id = "
-									+ patientId);
-					List<Date> dateEnrolled = queryDateEnrolled.list();
+				SQLQuery queryDateEnrolled = session
+						.createSQLQuery("select cast(min(date_enrolled) as DATE) from patient_program where (select cast((date_enrolled) as DATE)) is not null and patient_id = "
+								+ patientId);
+				List<Date> dateEnrolled = queryDateEnrolled.list();
 
-					if (dateEnrolled.get(0) != null) {
+				if (dateEnrolled.get(0) != null) {
 
-						if ((dateEnrolled.get(0).getTime() >= newStartDate
-								.getTime())
-								&& (dateEnrolled.get(0).getTime() <= newEndDate
-										.getTime()))
+					if ((dateEnrolled.get(0).getTime() >= newStartDate
+							.getTime())
+							&& (dateEnrolled.get(0).getTime() <= newEndDate
+									.getTime()))
 
-						{
+					{
 
-							SQLQuery queryExited = session
-									.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetExitFromCareConceptId())
-											+ " and (cast(o.obs_datetime as DATE)) <= '"
-											+ endDate
-											+ "' and o.voided = 0 and o.person_id="
-											+ patientId);
+						SQLQuery queryTransferredIn = session
+								.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
+										+ Integer.parseInt(GlobalProperties
+												.gpGetTransferredInConceptId())
+										+ " and o.voided = 0 and o.person_id= "
+										+ patientId);
 
-							List<Integer> patientIds3 = queryExited.list();
+						List<Integer> patientIds4 = queryTransferredIn.list();
 
-							if (patientIds3.size() == 0) {
+						if (patientIds4.size() == 0) {
 
-								/*SQLQuery queryDate1 = session
-										.createSQLQuery("select cast(max(encounter_datetime)as DATE) from encounter where "
-												+ "(select(cast(max(encounter_datetime)as Date))) <= '"
-												+ endDate
-												+ "' and (select cast(max(encounter_datetime)as DATE)) is not null and voided = 0 and patient_id = "
-												+ patientId);
+							patientIdsList.add(patientId);
 
-								List<Date> maxEnocunterDateTime = queryDate1
-										.list();
-
-								SQLQuery queryDate2 = session
-										.createSQLQuery("select cast(max(value_datetime) as DATE ) "
-												+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
-												+ endDate
-												+ "' and concept_id = "
-												+ Integer
-														.parseInt(GlobalProperties
-																.gpGetReturnVisitDateConceptId())
-												+ " and (select cast(max(value_datetime) as DATE )) is not null and voided = 0 and person_id = "
-												+ patientId);
-
-								List<Date> maxReturnVisitDay = queryDate2
-										.list();
-
-								if (((maxReturnVisitDay.get(0)) != null)
-										&& (maxEnocunterDateTime.get(0) != null)) {
-
-									if (((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-											.getTime() && (maxEnocunterDateTime
-											.get(0).getTime()) <= newEndDate
-											.getTime())
-											|| ((maxReturnVisitDay.get(0)
-													.getTime()) >= threeMonthsBeforeEndDate
-													.getTime() && (maxReturnVisitDay
-													.get(0).getTime()) <= newEndDate
-													.getTime())) {
-
-										patientIdsList.add(patientId);
-
-									}
-								}
-
-								else if (((maxReturnVisitDay.get(0)) == null)
-										&& (maxEnocunterDateTime.get(0) != null)) {
-
-									if ((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-											.getTime()
-											&& (maxEnocunterDateTime.get(0)
-													.getTime()) <= newEndDate
-													.getTime()) {
-
-										patientIdsList.add(patientId);
-
-									}
-								} else if (((maxReturnVisitDay.get(0) != null))
-										&& (maxReturnVisitDay.get(0).getTime() > newEndDate
-												.getTime()))
-
-								{*/
-									patientIdsList.add(patientId);
-
-								}
-							}
 						}
 					}
-			//}
-			
+				}
+			}
+
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
 			}
-		
-}
+
+		}
 
 		catch (Exception e) {
 			e.printStackTrace();
 		}
-
-			
 
 		return patients;
 
@@ -17550,12 +16582,6 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 		ArrayList<Person> patients = new ArrayList<Person>();
 
-		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
-
-		Date newEndDate = df.parse(endDate);
-
-		Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
-
 		Session session = getSessionFactory2().getCurrentSession();
 
 		try {
@@ -17565,14 +16591,14 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 >= 15 "
 							+ "  and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfSecondLineDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
 							+ endDate
 							+ "' and pg.program_id= "
@@ -17584,77 +16610,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 			for (Integer patientId : patientIds1) {
 
-				SQLQuery query2Date = session
-						.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-								+ Integer.parseInt(GlobalProperties
-										.gpGetExitFromCareConceptId())
-								+ " and (cast(o.obs_datetime as DATE)) <= '"
-								+ endDate
-								+ "' and o.voided = 0  and o.person_id="
-								+ patientId);
+				patientIdsList.add(patientId);
 
-				List<Integer> patientIds3 = query2Date.list();
-
-				if (patientIds3.size() == 0) {
-					// try {
-
-					/*SQLQuery queryDate1 = session
-							.createSQLQuery("select cast(max(encounter_datetime)as DATE) from encounter where "
-									+ "(select(cast(max(encounter_datetime)as Date))) <= '"
-									+ endDate
-									+ "' and (select cast(max(encounter_datetime)as DATE)) is not null and voided = 0 and patient_id = "
-									+ patientId);
-
-					List<Date> maxEnocunterDateTime = queryDate1.list();
-
-					SQLQuery queryDate2 = session
-							.createSQLQuery("select cast(max(value_datetime) as DATE ) "
-									+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
-									+ endDate
-									+ "' and concept_id = "
-									+ Integer.parseInt(GlobalProperties
-											.gpGetReturnVisitDateConceptId())
-									+ " and (select cast(max(value_datetime) as DATE )) is not null and voided = 0 and person_id = "
-									+ patientId);
-
-					List<Date> maxReturnVisitDay = queryDate2.list();
-
-					if (((maxReturnVisitDay.get(0)) != null)
-							&& (maxEnocunterDateTime.get(0) != null)) {
-
-						if (((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-								.getTime() && (maxEnocunterDateTime.get(0)
-								.getTime()) <= newEndDate.getTime())
-								|| ((maxReturnVisitDay.get(0).getTime()) >= threeMonthsBeforeEndDate
-										.getTime() && (maxReturnVisitDay.get(0)
-										.getTime()) <= newEndDate.getTime())) {
-
-							patientIdsList.add(patientId);
-
-						}
-					}
-
-					else if (((maxReturnVisitDay.get(0)) == null)
-							&& (maxEnocunterDateTime.get(0) != null)) {
-
-						if ((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-								.getTime()
-								&& (maxEnocunterDateTime.get(0).getTime()) <= newEndDate
-										.getTime()) {
-
-							patientIdsList.add(patientId);
-
-						}
-					} else if (((maxReturnVisitDay.get(0) != null))
-							&& (maxReturnVisitDay.get(0).getTime() > newEndDate
-									.getTime()))
-
-					{*/
-						patientIdsList.add(patientId);
-
-					}
-				}
-			//}
+			}
 
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
@@ -17697,7 +16655,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 > 14 "
@@ -17787,7 +16748,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 > 14 "
@@ -17822,7 +16786,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					SQLQuery queryDrugs = session
 							.createSQLQuery("select count(*) from orders ord "
 									+ " inner join drug_order do on ord.order_id = do.order_id "
-									/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+									/*
+									 * +
+									 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+									 */
 									+ " where ord.concept_id IN ("
 									+ GlobalProperties.gpGetListOfARVsDrugs()
 									+ ") and ord.voided = 0 and ord.patient_id = "
@@ -17833,7 +16800,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					SQLQuery queryDrugsDiscontinued = session
 							.createSQLQuery("select count(*) from orders ord "
 									+ " inner join drug_order do on ord.order_id = do.order_id "
-									/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+									/*
+									 * +
+									 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+									 */
 									+ " where ord.concept_id IN ("
 									+ GlobalProperties.gpGetListOfARVsDrugs()
 									+ ") and ord.voided = 0 and ord.discontinued = 1 and ord.patient_id = "
@@ -17848,7 +16818,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 						SQLQuery queryDate = session
 								.createSQLQuery("select cast(discontinued_date as DATE) from orders ord "
 										+ "inner join drug_order do on ord.order_id = do.order_id "
-										/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
+										/*
+										 * +
+										 * " inner join drug d on do.drug_inventory_id = d.drug_id "
+										 */
 										+ " where ord.concept_id IN ("
 										+ GlobalProperties
 												.gpGetListOfARVsDrugs()
@@ -17904,10 +16877,6 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
 
-		Date newEndDate = df.parse(endDate);
-
-		Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
-
 		Session session = getSessionFactory2().getCurrentSession();
 
 		try {
@@ -17917,17 +16886,14 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*
-							 * +
-							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
-							 */
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
@@ -17945,14 +16911,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "inner join person pe on pg.patient_id = pe.person_id "
 								+ "inner join patient pa on pg.patient_id = pa.patient_id "
 								+ "inner join orders ord on pg.patient_id = ord.patient_id "
-								+ "inner join drug_order do on ord.order_id = do.order_id "
-								/*
-								 * +
-								 * "inner join drug d on do.drug_inventory_id = d.drug_id "
-								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
-								+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+								+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 								+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
 								+ endDate
 								+ "'"
@@ -17963,79 +16924,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 				if (patientIds2.size() == 0) {
 
-					SQLQuery queryExited = session
-							.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-									+ Integer.parseInt(GlobalProperties
-											.gpGetExitFromCareConceptId())
-									+ " and (cast(o.obs_datetime as DATE)) <= '"
-									+ endDate
-									+ "' and o.voided = 0 and o.person_id="
-									+ patientId);
+					patientIdsList.add(patientId);
 
-					List<Integer> patientIds3 = queryExited.list();
-
-					if (patientIds3.size() == 0) {
-
-						/*SQLQuery queryDate1 = session
-								.createSQLQuery("select cast(max(encounter_datetime)as DATE) from encounter where "
-										+ "(select(cast(max(encounter_datetime)as Date))) <= '"
-										+ endDate
-										+ "' and (select cast(max(encounter_datetime)as DATE)) is not null and voided = 0 and patient_id = "
-										+ patientId);
-
-						List<Date> maxEnocunterDateTime = queryDate1.list();
-
-						SQLQuery queryDate2 = session
-								.createSQLQuery("select cast(max(value_datetime) as DATE ) "
-										+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
-										+ endDate
-										+ "' and concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetReturnVisitDateConceptId())
-										+ " and (select cast(max(value_datetime) as DATE )) is not null and voided = 0 and person_id = "
-										+ patientId);
-
-						List<Date> maxReturnVisitDay = queryDate2.list();
-
-						if (((maxReturnVisitDay.get(0)) != null)
-								&& (maxEnocunterDateTime.get(0) != null)) {
-
-							if (((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-									.getTime() && (maxEnocunterDateTime.get(0)
-									.getTime()) <= newEndDate.getTime())
-									|| ((maxReturnVisitDay.get(0).getTime()) >= threeMonthsBeforeEndDate
-											.getTime() && (maxReturnVisitDay
-											.get(0).getTime()) <= newEndDate
-											.getTime())) {
-
-								patientIdsList.add(patientId);
-
-							}
-						}
-
-						else if (((maxReturnVisitDay.get(0)) == null)
-								&& (maxEnocunterDateTime.get(0) != null)) {
-
-							if ((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-									.getTime()
-									&& (maxEnocunterDateTime.get(0).getTime()) <= newEndDate
-											.getTime()) {
-
-								patientIdsList.add(patientId);
-
-							}
-						} else if (((maxReturnVisitDay.get(0) != null))
-								&& (maxReturnVisitDay.get(0).getTime() > newEndDate
-										.getTime()))
-
-						{*/
-							patientIdsList.add(patientId);
-
-						}
-					}
 				}
-			//}
+			}
+
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
 			}
@@ -18062,9 +16955,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
 
-		Date newEndDate = df.parse(endDate);
+		// Date newEndDate = df.parse(endDate);
 
-		Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
+		// Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
 
 		Session session = getSessionFactory2().getCurrentSession();
 
@@ -18075,17 +16968,14 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*
-							 * +
-							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
-							 */
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+ endDate
+							+ "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 >= 15 "
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
@@ -18102,15 +16992,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 						.createSQLQuery("select distinct pg.patient_id from patient_program pg "
 								+ "inner join person pe on pg.patient_id = pe.person_id "
 								+ "inner join patient pa on pg.patient_id = pa.patient_id "
-								+ "inner join orders ord on pg.patient_id = ord.patient_id "
-								+ "inner join drug_order do on ord.order_id = do.order_id "
-								/*
-								 * +
-								 * "inner join drug d on do.drug_inventory_id = d.drug_id "
-								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
-								+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+								+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 								+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
 								+ endDate
 								+ "'"
@@ -18121,79 +17005,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 				if (patientIds2.size() == 0) {
 
-					SQLQuery queryExited = session
-							.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-									+ Integer.parseInt(GlobalProperties
-											.gpGetExitFromCareConceptId())
-									+ " and (cast(o.obs_datetime as DATE)) <= '"
-									+ endDate
-									+ "' and o.voided = 0 and o.person_id="
-									+ patientId);
+					patientIdsList.add(patientId);
 
-					List<Integer> patientIds3 = queryExited.list();
-
-					if (patientIds3.size() == 0) {
-
-						/*SQLQuery queryDate1 = session
-								.createSQLQuery("select cast(max(encounter_datetime)as DATE) from encounter where "
-										+ "(select(cast(max(encounter_datetime)as Date))) <= '"
-										+ endDate
-										+ "' and (select cast(max(encounter_datetime)as DATE)) is not null and voided = 0 and patient_id = "
-										+ patientId);
-
-						List<Date> maxEnocunterDateTime = queryDate1.list();
-
-						SQLQuery queryDate2 = session
-								.createSQLQuery("select cast(max(value_datetime) as DATE ) "
-										+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
-										+ endDate
-										+ "' and concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetReturnVisitDateConceptId())
-										+ " and (select cast(max(value_datetime) as DATE )) is not null and voided = 0 and person_id = "
-										+ patientId);
-
-						List<Date> maxReturnVisitDay = queryDate2.list();
-
-						if (((maxReturnVisitDay.get(0)) != null)
-								&& (maxEnocunterDateTime.get(0) != null)) {
-
-							if (((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-									.getTime() && (maxEnocunterDateTime.get(0)
-									.getTime()) <= newEndDate.getTime())
-									|| ((maxReturnVisitDay.get(0).getTime()) >= threeMonthsBeforeEndDate
-											.getTime() && (maxReturnVisitDay
-											.get(0).getTime()) <= newEndDate
-											.getTime())) {
-
-								patientIdsList.add(patientId);
-
-							}
-						}
-
-						else if (((maxReturnVisitDay.get(0)) == null)
-								&& (maxEnocunterDateTime.get(0) != null)) {
-
-							if ((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-									.getTime()
-									&& (maxEnocunterDateTime.get(0).getTime()) <= newEndDate
-											.getTime()) {
-
-								patientIdsList.add(patientId);
-
-							}
-						} else if (((maxReturnVisitDay.get(0) != null))
-								&& (maxReturnVisitDay.get(0).getTime() > newEndDate
-										.getTime()))
-
-						{*/
-							patientIdsList.add(patientId);
-
-						}
-					}
 				}
-			//}
+			}
+
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
 			}
@@ -18235,7 +17051,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
@@ -18266,7 +17085,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "inner join patient pa on pg.patient_id = pa.patient_id "
 								+ "inner join orders ord on pg.patient_id = ord.patient_id "
 								+ "inner join drug_order do on ord.order_id = do.order_id "
-								/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
@@ -18347,7 +17169,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
 							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
@@ -18369,7 +17194,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "inner join patient pa on pg.patient_id = pa.patient_id "
 								+ "inner join orders ord on pg.patient_id = ord.patient_id "
 								+ "inner join drug_order do on ord.order_id = do.order_id "
-								/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
@@ -18410,9 +17238,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 										+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
 										+ endDate
 										+ "' and concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetReturnVisitDateConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetReturnVisitDateConceptId())
 										+ " and (select cast(max(value_datetime) as DATE )) is not null and voided = 0 and person_id = "
 										+ patientId);
 
@@ -18501,7 +17328,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
@@ -18513,9 +17343,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ Integer.parseInt(GlobalProperties
 									.gpGetTransferredInConceptId())
 							+ " and o.value_coded = "
-							+ Integer
-									.parseInt(GlobalProperties
-											.gpGetYesAsAnswerToTransferredInConceptId())
+							+ Integer.parseInt(GlobalProperties
+									.gpGetYesAsAnswerToTransferredInConceptId())
 							+ " and pg.program_id =  "
 							+ Integer.parseInt(GlobalProperties
 									.gpGetHIVProgramId()));
@@ -18530,7 +17359,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "inner join patient pa on pg.patient_id = pa.patient_id "
 								+ "inner join orders ord on pg.patient_id = ord.patient_id "
 								+ "inner join drug_order do on ord.order_id = do.order_id "
-								/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
@@ -18620,7 +17452,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join obs o on pg.patient_id = o.person_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
@@ -18648,7 +17483,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "inner join patient pa on pg.patient_id = pa.patient_id "
 								+ "inner join orders ord on pg.patient_id = ord.patient_id "
 								+ "inner join drug_order do on ord.order_id = do.order_id "
-								/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
@@ -18667,9 +17505,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 									+ Integer.parseInt(GlobalProperties
 											.gpGetExitFromCareConceptId())
 									+ " and value_coded= "
-									+ Integer
-											.parseInt(GlobalProperties
-													.gpGetExitFromTransferredOutConceptId())
+									+ Integer.parseInt(GlobalProperties
+											.gpGetExitFromTransferredOutConceptId())
 									+ " and (select cast(obs_datetime as DATE)) is not null and voided = 0 and person_id = "
 									+ patientId);
 
@@ -18734,7 +17571,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
@@ -18898,7 +17738,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "where ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
 							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
@@ -18920,7 +17763,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "inner join patient pa on pg.patient_id = pa.patient_id "
 								+ "inner join orders ord on pg.patient_id = ord.patient_id "
 								+ "inner join drug_order do on ord.order_id = do.order_id "
-								/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
@@ -18961,9 +17807,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 										+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
 										+ startDate
 										+ "' and concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetReturnVisitDateConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetReturnVisitDateConceptId())
 										+ " and (select cast(max(value_datetime) as DATE )) is not null and voided = 0 and person_id = "
 										+ patientId);
 
@@ -19147,9 +17992,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryHIVResultConcept = session
 									.createSQLQuery("select o.value_coded from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and o.value_coded in ("
 											+ GlobalProperties
 													.gpGetListOfAnswersToResultOfHIVTest()
@@ -19278,9 +18122,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					if (patientIds3.size() != 0) {
 						SQLQuery queryHIVResultDate = session
 								.createSQLQuery("select cast(max(o.obs_datetime)as DATE) from obs o where o.concept_id = "
-										+ Integer
-												.parseInt(GlobalProperties
-														.gpGetResultForHIVTestConceptId())
+										+ Integer.parseInt(GlobalProperties
+												.gpGetResultForHIVTestConceptId())
 										+ " and o.value_coded in ("
 										+ GlobalProperties
 												.gpGetListOfAnswersToResultOfHIVTest()
@@ -19295,9 +18138,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 							SQLQuery queryHIVResultConcept = session
 									.createSQLQuery("select o.value_coded from obs o where o.concept_id = "
-											+ Integer
-													.parseInt(GlobalProperties
-															.gpGetResultForHIVTestConceptId())
+											+ Integer.parseInt(GlobalProperties
+													.gpGetResultForHIVTestConceptId())
 											+ " and o.value_coded in ("
 											+ GlobalProperties
 													.gpGetListOfAnswersToResultOfHIVTest()
@@ -19436,8 +18278,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 																		.getTime() >= newStartDate
 																		.getTime())
 																		&& (exposedInfantInPMTCT
-																				.get(
-																						0)
+																				.get(0)
 																				.getTime() <= newEndDate
 																				.getTime())) {
 
@@ -19471,8 +18312,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 	}
 
-	public  List<Person> patientsOnCotrimoProphylaxisLessThan15YearsList (String startDate,
-			String endDate) throws ParseException {
+	public List<Person> patientsOnCotrimoProphylaxisLessThan15YearsList(
+			String startDate, String endDate) throws ParseException {
 
 		List<Integer> patientIdsList = new ArrayList<Integer>();
 
@@ -19481,11 +18322,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
 
 		Date newEndDate = df.parse(endDate);
-		
+
 		Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
 
 		Date newStartDate = df.parse(startDate);
-
 
 		try {
 
@@ -19497,7 +18337,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "WHERE DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 < 15 "
@@ -19520,7 +18363,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "inner join patient pa on pg.patient_id = pa.patient_id "
 								+ "inner join orders ord on pg.patient_id = ord.patient_id "
 								+ "inner join drug_order do on ord.order_id = do.order_id "
-								/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
@@ -19532,13 +18378,12 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 				List<Integer> patientIds1 = query2.list();
 
-				//for (Integer patientId : patientIds1) {
-				
-				if(patientIds1.size() == 0)
-				{
+				// for (Integer patientId : patientIds1) {
+
+				if (patientIds1.size() == 0) {
 
 					SQLQuery queryExited = session
-					
+
 							.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
 									+ Integer.parseInt(GlobalProperties
 											.gpGetExitFromCareConceptId())
@@ -19552,81 +18397,82 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 					if (patientIds3.size() == 0) {
 
-						/*SQLQuery queryDate1 = session
-								.createSQLQuery("select cast(max(encounter_datetime)as DATE) from encounter where "
-										+ "(select(cast(max(encounter_datetime)as Date))) <= '"
-										+ endDate
-										+ "' and (select(cast(max(encounter_datetime)as DATE))) is not null and voided = 0 and patient_id = "
-										+ patientId);
+						/*
+						 * SQLQuery queryDate1 = session .createSQLQuery(
+						 * "select cast(max(encounter_datetime)as DATE) from encounter where "
+						 * +
+						 * "(select(cast(max(encounter_datetime)as Date))) <= '"
+						 * + endDate +
+						 * "' and (select(cast(max(encounter_datetime)as DATE))) is not null and voided = 0 and patient_id = "
+						 * + patientId);
+						 * 
+						 * List<Date> maxEnocunterDateTime = queryDate1.list();
+						 * 
+						 * SQLQuery queryDate2 = session .createSQLQuery(
+						 * "select cast(max(value_datetime) as DATE ) " +
+						 * "from obs where (select(cast(max(value_datetime)as Date))) <= '"
+						 * + endDate + "' and concept_id = " +
+						 * Integer.parseInt(GlobalProperties
+						 * .gpGetReturnVisitDateConceptId()) +
+						 * " and (select(cast(max(value_datetime)as DATE))) is not null and voided = 0 and person_id = "
+						 * + patientId);
+						 * 
+						 * List<Date> maxReturnVisitDay = queryDate2.list();
+						 * 
+						 * if (((maxReturnVisitDay.get(0)) != null) &&
+						 * (maxEnocunterDateTime.get(0) != null)) {
+						 * 
+						 * if (((maxEnocunterDateTime.get(0).getTime()) >=
+						 * threeMonthsBeforeEndDate .getTime() &&
+						 * (maxEnocunterDateTime.get(0) .getTime()) <=
+						 * newEndDate.getTime()) ||
+						 * ((maxReturnVisitDay.get(0).getTime()) >=
+						 * threeMonthsBeforeEndDate .getTime() &&
+						 * (maxReturnVisitDay.get(0) .getTime()) <=
+						 * newEndDate.getTime())) {
+						 * 
+						 * patientIdsList.add(patientId);
+						 * 
+						 * } }
+						 * 
+						 * else if (((maxReturnVisitDay.get(0)) == null) &&
+						 * (maxEnocunterDateTime.get(0) != null)) {
+						 * 
+						 * if ((maxEnocunterDateTime.get(0).getTime()) >=
+						 * threeMonthsBeforeEndDate .getTime() &&
+						 * (maxEnocunterDateTime.get(0).getTime()) <= newEndDate
+						 * .getTime()) {
+						 * 
+						 * patientIdsList.add(patientId);
+						 * 
+						 * } } else if (((maxReturnVisitDay.get(0) != null)) &&
+						 * (maxReturnVisitDay.get(0).getTime() > newEndDate
+						 * .getTime()))
+						 * 
+						 * {
+						 */
+						patientIdsList.add(patientId);
 
-						List<Date> maxEnocunterDateTime = queryDate1.list();
-
-						SQLQuery queryDate2 = session
-								.createSQLQuery("select cast(max(value_datetime) as DATE ) "
-										+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
-										+ endDate
-										+ "' and concept_id = "
-										+ Integer.parseInt(GlobalProperties
-												.gpGetReturnVisitDateConceptId())
-										+ " and (select(cast(max(value_datetime)as DATE))) is not null and voided = 0 and person_id = "
-										+ patientId);
-
-						List<Date> maxReturnVisitDay = queryDate2.list();
-
-						if (((maxReturnVisitDay.get(0)) != null)
-								&& (maxEnocunterDateTime.get(0) != null)) {
-
-							if (((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-									.getTime() && (maxEnocunterDateTime.get(0)
-									.getTime()) <= newEndDate.getTime())
-									|| ((maxReturnVisitDay.get(0).getTime()) >= threeMonthsBeforeEndDate
-											.getTime() && (maxReturnVisitDay.get(0)
-											.getTime()) <= newEndDate.getTime())) {
-
-								patientIdsList.add(patientId);
-
-							}
-						}
-
-						else if (((maxReturnVisitDay.get(0)) == null)
-								&& (maxEnocunterDateTime.get(0) != null)) {
-
-							if ((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-									.getTime()
-									&& (maxEnocunterDateTime.get(0).getTime()) <= newEndDate
-											.getTime()) {
-
-								patientIdsList.add(patientId);
-
-							}
-						} else if (((maxReturnVisitDay.get(0) != null))
-								&& (maxReturnVisitDay.get(0).getTime() > newEndDate
-										.getTime()))
-
-						{*/
-							patientIdsList.add(patientId);
-
-						}
 					}
 				}
-			//}
-		
-		
-		for (Integer patientId : patientIdsList) {
-			patients.add(Context.getPersonService().getPerson(patientId));
-		}
-		}
-				
-			catch (Exception e) {
-
-				e.printStackTrace();
 			}
-			return patients;
+			// }
+
+			for (Integer patientId : patientIdsList) {
+				patients.add(Context.getPersonService().getPerson(patientId));
+			}
+		}
+
+		catch (Exception e) {
+
+			e.printStackTrace();
+		}
+		return patients;
 	}
-	
-	public List<Person> patientsOnCotrimoProphylaxisGreatherThan15YearsList(String startDate,
-			String endDate) throws ParseException, HibernateException,
-			NumberFormatException {
+
+	public List<Person> patientsOnCotrimoProphylaxisGreatherThan15YearsList(
+			String startDate, String endDate) throws ParseException,
+			HibernateException, NumberFormatException {
 
 		List<Integer> patientIdsList = new ArrayList<Integer>();
 
@@ -19635,11 +18481,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
 
 		Date newEndDate = df.parse(endDate);
-		
+
 		Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
 
 		Date newStartDate = df.parse(startDate);
-
 
 		try {
 
@@ -19651,7 +18496,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
 							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+							/*
+							 * +
+							 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+							 */
 							+ "WHERE DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 >= 14 "
@@ -19674,7 +18522,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "inner join patient pa on pg.patient_id = pa.patient_id "
 								+ "inner join orders ord on pg.patient_id = ord.patient_id "
 								+ "inner join drug_order do on ord.order_id = do.order_id "
-								/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
+								/*
+								 * +
+								 * "inner join drug d on do.drug_inventory_id = d.drug_id "
+								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
@@ -19686,10 +18537,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 				List<Integer> patientIds1 = query2.list();
 
-				//for (Integer patientId : patientIds1) {
-				
-				if(patientIds1.size()==0)
-				{
+				// for (Integer patientId : patientIds1) {
+
+				if (patientIds1.size() == 0) {
 
 					SQLQuery queryExited = session
 							.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
@@ -19705,84 +18555,82 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 					if (patientIds3.size() == 0) {
 
-						/*SQLQuery queryDate1 = session
-								.createSQLQuery("select cast(max(encounter_datetime)as DATE) from encounter where "
-										+ "(select(cast(max(encounter_datetime)as Date))) <= '"
-										+ endDate
-										+ "' and (select(cast(max(encounter_datetime)as DATE))) is not null and voided = 0 and patient_id = "
-										+ patientId);
+						/*
+						 * SQLQuery queryDate1 = session .createSQLQuery(
+						 * "select cast(max(encounter_datetime)as DATE) from encounter where "
+						 * +
+						 * "(select(cast(max(encounter_datetime)as Date))) <= '"
+						 * + endDate +
+						 * "' and (select(cast(max(encounter_datetime)as DATE))) is not null and voided = 0 and patient_id = "
+						 * + patientId);
+						 * 
+						 * List<Date> maxEnocunterDateTime = queryDate1.list();
+						 * 
+						 * SQLQuery queryDate2 = session .createSQLQuery(
+						 * "select cast(max(value_datetime) as DATE ) " +
+						 * "from obs where (select(cast(max(value_datetime)as Date))) <= '"
+						 * + endDate + "' and concept_id = " +
+						 * Integer.parseInt(GlobalProperties
+						 * .gpGetReturnVisitDateConceptId()) +
+						 * " and (select(cast(max(value_datetime)as DATE))) is not null and voided = 0 and person_id = "
+						 * + patientId);
+						 * 
+						 * List<Date> maxReturnVisitDay = queryDate2.list();
+						 * 
+						 * if (((maxReturnVisitDay.get(0)) != null) &&
+						 * (maxEnocunterDateTime.get(0) != null)) {
+						 * 
+						 * if (((maxEnocunterDateTime.get(0).getTime()) >=
+						 * threeMonthsBeforeEndDate .getTime() &&
+						 * (maxEnocunterDateTime.get(0) .getTime()) <=
+						 * newEndDate.getTime()) ||
+						 * ((maxReturnVisitDay.get(0).getTime()) >=
+						 * threeMonthsBeforeEndDate .getTime() &&
+						 * (maxReturnVisitDay.get(0) .getTime()) <=
+						 * newEndDate.getTime())) {
+						 * 
+						 * patientIdsList.add(patientId);
+						 * 
+						 * } }
+						 * 
+						 * else if (((maxReturnVisitDay.get(0)) == null) &&
+						 * (maxEnocunterDateTime.get(0) != null)) {
+						 * 
+						 * if ((maxEnocunterDateTime.get(0).getTime()) >=
+						 * threeMonthsBeforeEndDate .getTime() &&
+						 * (maxEnocunterDateTime.get(0).getTime()) <= newEndDate
+						 * .getTime()) {
+						 * 
+						 * patientIdsList.add(patientId); } } else if
+						 * (((maxReturnVisitDay.get(0) != null)) &&
+						 * (maxReturnVisitDay.get(0).getTime() > newEndDate
+						 * .getTime()))
+						 * 
+						 * {
+						 */
+						patientIdsList.add(patientId);
 
-						List<Date> maxEnocunterDateTime = queryDate1.list();
-
-						SQLQuery queryDate2 = session
-								.createSQLQuery("select cast(max(value_datetime) as DATE ) "
-										+ "from obs where (select(cast(max(value_datetime)as Date))) <= '"
-										+ endDate
-										+ "' and concept_id = "
-										+ Integer.parseInt(GlobalProperties
-												.gpGetReturnVisitDateConceptId())
-										+ " and (select(cast(max(value_datetime)as DATE))) is not null and voided = 0 and person_id = "
-										+ patientId);
-
-						List<Date> maxReturnVisitDay = queryDate2.list();
-
-						if (((maxReturnVisitDay.get(0)) != null)
-								&& (maxEnocunterDateTime.get(0) != null)) {
-
-							if (((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-									.getTime() && (maxEnocunterDateTime.get(0)
-									.getTime()) <= newEndDate.getTime())
-									|| ((maxReturnVisitDay.get(0).getTime()) >= threeMonthsBeforeEndDate
-											.getTime() && (maxReturnVisitDay.get(0)
-											.getTime()) <= newEndDate.getTime())) {
-
-								patientIdsList.add(patientId);
-
-							}
-						}
-
-						else if (((maxReturnVisitDay.get(0)) == null)
-								&& (maxEnocunterDateTime.get(0) != null)) {
-
-							if ((maxEnocunterDateTime.get(0).getTime()) >= threeMonthsBeforeEndDate
-									.getTime()
-									&& (maxEnocunterDateTime.get(0).getTime()) <= newEndDate
-											.getTime()) {
-
-								patientIdsList.add(patientId);
-							}
-						} else if (((maxReturnVisitDay.get(0) != null))
-								&& (maxReturnVisitDay.get(0).getTime() > newEndDate
-										.getTime()))
-
-						{*/
-							patientIdsList.add(patientId);
-
-						}
 					}
 				}
-			//}
-			
+			}
+			// }
+
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
 			}
 		}
-				
-			catch (Exception e) {
 
-				e.printStackTrace();
-			}
-			return patients;
+		catch (Exception e) {
+
+			e.printStackTrace();
+		}
+		return patients;
 	}
-	
-	
-	
-	public List<Person> patientsPediatricNewOnSecondLineThisMonthList(String startDate,
-			String endDate) throws ParseException, HibernateException,
-			NumberFormatException {
-		
-		
-		
+
+	public List<Person> patientsPediatricNewOnSecondLineThisMonthList(
+			String startDate, String endDate) throws ParseException,
+			HibernateException, NumberFormatException {
+
 		List<Integer> patientIdsList = new ArrayList<Integer>();
 
 		ArrayList<Person> patients = new ArrayList<Person>();
@@ -19790,8 +18638,6 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
 
 		Date newEndDate = df.parse(endDate);
-		
-		Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
 
 		Date newStartDate = df.parse(startDate);
 
@@ -19803,15 +18649,15 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+  endDate
+							 + "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
-							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 13 "
+							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfSecondLineDrugs()
 							+ ") "
-							+ " and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ " and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ " and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
 							+ startDate
 							+ "' and (cast(ord.start_date as DATE)) <= '"
@@ -19825,31 +18671,16 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 			for (Integer patientId : patientIdsOnCotrimo) {
 
-				SQLQuery query2 = session
-						.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-								+ Integer.parseInt(GlobalProperties
-										.gpGetExitFromCareConceptId())
-								+ " and (cast(o.obs_datetime as DATE)) <= '"
-								+ endDate
-								+ "' and o.voided = 0 and o.person_id="
-								+ patientId);
-
-				List<Integer> patientIds2 = query2.list();
-
-				if (patientIds2.size() == 0) {
-
 					SQLQuery queryMinStartDate = session
 							.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
-									+ " inner join drug_order do on ord.order_id = do.order_id "
-									/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
 									+ " where ord.concept_id IN ("
-									+ GlobalProperties.gpGetListOfSecondLineDrugs()
+									+ GlobalProperties
+											.gpGetListOfSecondLineDrugs()
 									+ ") "
-									+ " and (select(cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+									+ " and (select(cast((ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 									+ patientId);
 
-					List<Date> patientIdsMinStartDate = queryMinStartDate
-							.list();
+					List<Date> patientIdsMinStartDate = queryMinStartDate.list();
 
 					if (patientIdsMinStartDate.get(0) != null)
 
@@ -19861,8 +18692,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							patientIdsList.add(patientId);
 						}
 				}
-			}
-			
+
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
 			}
@@ -19872,16 +18702,13 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 			e.printStackTrace();
 		}
 		return patients;
-		
+
 	}
-	
-	
-	public List<Person> patientsAdultNewOnSecondLineThisMonthList(String startDate,
-			String endDate) throws ParseException, HibernateException,
-			NumberFormatException {
-		
-		
-		
+
+	public List<Person> patientsAdultNewOnSecondLineThisMonthList(
+			String startDate, String endDate) throws ParseException,
+			HibernateException, NumberFormatException {
+
 		List<Integer> patientIdsList = new ArrayList<Integer>();
 
 		ArrayList<Person> patients = new ArrayList<Person>();
@@ -19889,8 +18716,6 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
 
 		Date newEndDate = df.parse(endDate);
-		
-		Date threeMonthsBeforeEndDate = df.parse(addDaysToDate(endDate, -3));
 
 		Date newStartDate = df.parse(startDate);
 
@@ -19902,15 +18727,15 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "inner join person pe on pg.patient_id = pe.person_id "
 							+ "inner join patient pa on pg.patient_id = pa.patient_id "
 							+ "inner join orders ord on pg.patient_id = ord.patient_id "
-							+ "inner join drug_order do on ord.order_id = do.order_id "
-							/*+ "inner join drug d on do.drug_inventory_id = d.drug_id "*/
-							+ "where DATE_FORMAT(FROM_DAYS(TO_DAYS('"
+							+ "where ((pg.date_completed is null) or (pg.date_completed > '"
+							+  endDate
+							 + "')) and DATE_FORMAT(FROM_DAYS(TO_DAYS('"
 							+ endDate
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 >= 14 "
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfSecondLineDrugs()
 							+ ") "
-							+ " and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ " and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ " and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
 							+ startDate
 							+ "' and (cast(ord.start_date as DATE)) <= '"
@@ -19924,31 +18749,16 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 			for (Integer patientId : patientIdsOnCotrimo) {
 
-				SQLQuery query2 = session
-						.createSQLQuery("select distinct o.person_id from obs o where o.concept_id = "
-								+ Integer.parseInt(GlobalProperties
-										.gpGetExitFromCareConceptId())
-								+ " and (cast(o.obs_datetime as DATE)) <= '"
-								+ endDate
-								+ "' and o.voided = 0 and o.person_id="
-								+ patientId);
-
-				List<Integer> patientIds2 = query2.list();
-
-				if (patientIds2.size() == 0) {
-
 					SQLQuery queryMinStartDate = session
 							.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
-									+ " inner join drug_order do on ord.order_id = do.order_id "
-									/*+ " inner join drug d on do.drug_inventory_id = d.drug_id "*/
 									+ " where ord.concept_id IN ("
-									+ GlobalProperties.gpGetListOfSecondLineDrugs()
+									+ GlobalProperties
+											.gpGetListOfSecondLineDrugs()
 									+ ") "
-									+ " and (select(cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+									+ " and (select(cast((ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 									+ patientId);
 
-					List<Date> patientIdsMinStartDate = queryMinStartDate
-							.list();
+					List<Date> patientIdsMinStartDate = queryMinStartDate.list();
 
 					if (patientIdsMinStartDate.get(0) != null)
 
@@ -19960,8 +18770,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							patientIdsList.add(patientId);
 						}
 				}
-			}
-			
+
 			for (Integer patientId : patientIdsList) {
 				patients.add(Context.getPersonService().getPerson(patientId));
 			}
@@ -19971,11 +18780,12 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 			e.printStackTrace();
 		}
 		return patients;
-		
+
 	}
 
 	/**
-	 * @see org.openmrs.module.tracnetreporting.service.TracNetPatientService#NumberOfPregnantWomenWhoReceivedTherapeuticOrNutritionalSupplementationThisMonth(java.lang.String, java.lang.String)
+	 * @see org.openmrs.module.tracnetreporting.service.TracNetPatientService#NumberOfPregnantWomenWhoReceivedTherapeuticOrNutritionalSupplementationThisMonth(java.lang.String,
+	 *      java.lang.String)
 	 */
 	@Override
 	public List<Person> NumberOfPregnantWomenWhoReceivedTherapeuticOrNutritionalSupplementationThisMonth(
@@ -19985,7 +18795,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 	}
 
 	/**
-	 * @see org.openmrs.module.tracnetreporting.service.TracNetPatientService#NumberOfLactatingWomenWhoReceivedTherapeuticOrNutritionalSupplementationThisMonth(java.lang.String, java.lang.String)
+	 * @see org.openmrs.module.tracnetreporting.service.TracNetPatientService#NumberOfLactatingWomenWhoReceivedTherapeuticOrNutritionalSupplementationThisMonth(java.lang.String,
+	 *      java.lang.String)
 	 */
 	@Override
 	public List<Person> NumberOfLactatingWomenWhoReceivedTherapeuticOrNutritionalSupplementationThisMonth(
@@ -19995,7 +18806,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 	}
 
 	/**
-	 * @see org.openmrs.module.tracnetreporting.service.TracNetPatientService#NumberOfHIVPositivePregnantWomenIdentifiedAtMaternityWhoStartedTripleTherapyProphylaxis(java.lang.String, java.lang.String)
+	 * @see org.openmrs.module.tracnetreporting.service.TracNetPatientService#NumberOfHIVPositivePregnantWomenIdentifiedAtMaternityWhoStartedTripleTherapyProphylaxis(java.lang.String,
+	 *      java.lang.String)
 	 */
 	@Override
 	public List<Person> NumberOfHIVPositivePregnantWomenIdentifiedAtMaternityWhoStartedTripleTherapyProphylaxis(
@@ -20005,7 +18817,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 	}
 
 	/**
-	 * @see org.openmrs.module.tracnetreporting.service.TracNetPatientService#NumberOfNewInfantsBornFromHIVPositiveMothersWhoReceivedARTProphylaxisAtBirth(java.lang.String, java.lang.String)
+	 * @see org.openmrs.module.tracnetreporting.service.TracNetPatientService#NumberOfNewInfantsBornFromHIVPositiveMothersWhoReceivedARTProphylaxisAtBirth(java.lang.String,
+	 *      java.lang.String)
 	 */
 	@Override
 	public List<Person> NumberOfNewInfantsBornFromHIVPositiveMothersWhoReceivedARTProphylaxisAtBirth(
@@ -20015,7 +18828,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 	}
 
 	/**
-	 * @see org.openmrs.module.tracnetreporting.service.TracNetPatientService#numberOfHIVPositivePregnantWomenWhoReceivedTripleTherapyAsProphylaxis(java.lang.String, java.lang.String)
+	 * @see org.openmrs.module.tracnetreporting.service.TracNetPatientService#numberOfHIVPositivePregnantWomenWhoReceivedTripleTherapyAsProphylaxis(java.lang.String,
+	 *      java.lang.String)
 	 */
 	@Override
 	public List<Person> numberOfHIVPositivePregnantWomenWhoReceivedTripleTherapyAsProphylaxis(
@@ -20023,6 +18837,5 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
 
 }

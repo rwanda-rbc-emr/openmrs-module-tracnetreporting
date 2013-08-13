@@ -6,7 +6,7 @@
 	<!-- TracNetReporting Module Properties -->
 	<id>tracnetreporting</id>
 	<name>TracNet Reporting</name>
-	<version>0.1.0.27</version>
+	<version>0.1.0.28</version>
 	<package>org.openmrs.module.@MODULE_ID@</package>
 	<author>Kamonyo Mugabo</author>
 	<description>
