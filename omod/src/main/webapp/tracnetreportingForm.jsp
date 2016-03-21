@@ -1,11 +1,9 @@
 <%@ include file="/WEB-INF/template/include.jsp"%>
 <%@ include file="/WEB-INF/template/header.jsp"%>
-<openmrs:htmlInclude file="/scripts/calendar/calendar.js" />
 
 <!--  <openmrs:require privilege="View TRACNet Reporting" otherwise="/login.htm" redirect="/module/@MODULE_ID@/tracnetreportingForm.list" /> -->
 
 <openmrs:htmlInclude file="/scripts/calendar/calendar.js" />
-<openmrs:htmlInclude file="/moduleResources/@MODULE_ID@/scripts/jquery-1.3.2.js" />
 <openmrs:htmlInclude file="/moduleResources/@MODULE_ID@/styles/ui.all.css" />
 <openmrs:htmlInclude file="/moduleResources/@MODULE_ID@/styles/demos.css" />
 <openmrs:htmlInclude file="/moduleResources/@MODULE_ID@/scripts/ui.core.js" />

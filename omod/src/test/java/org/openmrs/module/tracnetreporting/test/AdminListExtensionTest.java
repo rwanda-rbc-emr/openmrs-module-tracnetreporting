@@ -15,10 +15,10 @@ package org.openmrs.module.tracnetreporting.test;
 
 import java.util.Map;
 
-import junit.framework.TestCase;
-
 import org.openmrs.module.Extension.MEDIA_TYPE;
 import org.openmrs.module.tracnetreporting.extension.html.AdminList;
+
+import junit.framework.TestCase;
 
 /**
  * This test validates the AdminList extension class

@@ -18,8 +18,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-import javax.lang.model.util.SimpleAnnotationValueVisitor6;
-
 /**
  *
  */
@@ -45,9 +43,5 @@ public class Testing {
 		Date dd = sd.parse(date);
 		
 		System.out.println(dd.getTime());
-		
-		
-
 	}
-
 }

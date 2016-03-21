@@ -140,7 +140,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ endDate
 							+ "')) and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
-							+ ") and (cast(ord.start_date as DATE)) <= '"
+							+ ") and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -295,7 +295,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and pe.gender = 'F' and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
 							+ ") "
-							+ " and (cast(ord.start_date as DATE)) <= '"
+							+ " and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -319,7 +319,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
-								+ ") and (cast(ord.start_date as DATE)) <= '"
+								+ ") and (cast(ord.date_activated as DATE)) <= '"
 								+ endDate
 								+ "'"
 								+ " and pg.voided = 0 and pe.voided = 0 and pa.voided = 0 and ord.voided = 0 and pg.patient_id="
@@ -380,7 +380,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
 							+ ") "
-							+ " and pe.gender = 'F' and (cast(ord.start_date as DATE)) <= '"
+							+ " and pe.gender = 'F' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -404,7 +404,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
-								+ ") and (cast(ord.start_date as DATE)) <= '"
+								+ ") and (cast(ord.date_activated as DATE)) <= '"
 								+ endDate
 								+ "'"
 								+ " and pg.voided = 0 and pe.voided = 0 and pa.voided = 0 and ord.voided = 0 and pg.patient_id="
@@ -466,7 +466,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
 							+ ") "
-							+ " and pe.gender = 'M' and (cast(ord.start_date as DATE)) <= '"
+							+ " and pe.gender = 'M' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -490,7 +490,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
-								+ ") and (cast(ord.start_date as DATE)) <= '"
+								+ ") and (cast(ord.date_activated as DATE)) <= '"
 								+ endDate
 								+ "'"
 								+ " and pg.voided = 0 and pe. voided = 0 and pa.voided = 0 and ord.voided = 0 and pg.patient_id="
@@ -553,7 +553,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
 							+ ") "
-							+ " and pe.gender = 'M' and (cast(ord.start_date as DATE)) <= '"
+							+ " and pe.gender = 'M' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -578,7 +578,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
-								+ " and (cast(ord.start_date as DATE)) <= '"
+								+ " and (cast(ord.date_activated as DATE)) <= '"
 								+ endDate
 								+ "'"
 								+ " and pg.voided = 0 and pe.voided = 0 and pa.voided = 0 and ord.voided = 0 and pg.patient_id="
@@ -649,7 +649,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 > 14 "
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfTBDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and pg.date_enrolled >= '"
 							+ startDate
 							+ "'  and pg.date_enrolled <= '"
@@ -677,7 +677,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					{
 
 						SQLQuery queryMinStartDate = session
-								.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+								.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 										+ " inner join drug_order do on ord.order_id = do.order_id "
 										/*
 										 * +
@@ -686,7 +686,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 										+ " where ord.concept_id IN ("
 										+ GlobalProperties.gpGetListOfTBDrugs()
 										+ ") "
-										+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+										+ " and (select (cast(min(ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 										+ patientId);
 
 						List<Date> patientIdsMinStartDate = queryMinStartDate
@@ -773,7 +773,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfTBDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and pg.date_enrolled >= '"
 							+ startDate
 							+ "'  and pg.date_enrolled <= '"
@@ -801,7 +801,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 					{
 
 						SQLQuery queryMinStartDate = session
-								.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+								.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 										+ " inner join drug_order do on ord.order_id = do.order_id "
 										/*
 										 * +
@@ -810,7 +810,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 										+ " where ord.concept_id IN ("
 										+ GlobalProperties.gpGetListOfTBDrugs()
 										+ ") "
-										+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+										+ " and (select (cast(min(ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 										+ patientId);
 
 						List<Date> patientIdsMinStartDate = queryMinStartDate
@@ -1468,7 +1468,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 < 2 "
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
-							+ ") and (cast(ord.start_date as DATE)) <= '"
+							+ ") and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -1492,7 +1492,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
-								+ ") and (cast(ord.start_date as DATE)) <= '"
+								+ ") and (cast(ord.date_activated as DATE)) <= '"
 								+ endDate
 								+ "'"
 								+ " and pg.voided = 0 and pe.voided = 0 and pa.voided = 0 and ord.voided = 0 and pg.patient_id="
@@ -1552,7 +1552,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 4 "
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
-							+ ") and (cast(ord.start_date as DATE)) <= '"
+							+ ") and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -1576,7 +1576,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
-								+ ") and (cast(ord.start_date as DATE)) <= '"
+								+ ") and (cast(ord.date_activated as DATE)) <= '"
 								+ endDate
 								+ "'"
 								+ " and pg.voided = 0 and pe.voided = 0 and pa.voided = 0 and ord.voided = 0 and pg.patient_id="
@@ -1733,7 +1733,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfFirstLineDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -1753,7 +1753,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfSecondLineDrugs()
 								+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-								+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+								+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 								+ endDate
 								+ "'"
 								+ " and pg.patient_id="
@@ -1822,8 +1822,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 > 14 "
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -1960,7 +1960,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -2065,7 +2065,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -2159,7 +2159,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -2169,7 +2169,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and o.value_coded = "
 							+ Integer.parseInt(GlobalProperties
 									.gpGetExitFromCareDiedConceptId())
-							+ " and ord.discontinued_date is not null and ord.discontinued_reason = "
+							+ " and ord.date_stopped is not null and ord.order_reason = "
 							+ Integer.parseInt(GlobalProperties
 									.gpGetExitFromCareDiedConceptId())
 							+ " and pg.program_id =  "
@@ -2255,11 +2255,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
-							+ "' and ord.discontinued = 1 and pg.date_enrolled <= '"
+							+ "' and pg.date_enrolled <= '"
 							+ endDate
-							+ "' and ord.discontinued_date is not null and pg.program_id =  "
+							+ "' and ord.date_stopped is not null and pg.program_id =  "
 							+ Integer.parseInt(GlobalProperties
 									.gpGetHIVProgramId()));
 
@@ -2303,7 +2303,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 									 */
 									+ " where ord.concept_id IN ("
 									+ GlobalProperties.gpGetListOfARVsDrugs()
-									+ ") and ord.voided = 0 and ord.discontinued = 1 and ord.patient_id = "
+									+ ") and ord.voided = 0 and ord.patient_id = "
 									+ patientId);
 
 					List<Integer> drugsDiscontinuedPerPatient = queryDrugsDiscontinued
@@ -2405,8 +2405,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 <= 14 "
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -2543,7 +2543,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -2648,7 +2648,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -2733,7 +2733,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and pe.gender = 'F' and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ " and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ " and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -2802,10 +2802,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "where pe.gender = 'F' and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
-							+ "and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ "and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ df.format(oneYearBeforeStartDate)
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ df.format(oneYearBeforeEndDate)
 							+ "' and pg.program_id= "
 							+ Integer.parseInt(GlobalProperties
@@ -2830,7 +2830,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				if (patientIds2.size() == 0) {
 
 					SQLQuery queryMinStartDate = session
-							.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+							.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 									+ " inner join drug_order do on ord.order_id = do.order_id "
 									/*
 									 * +
@@ -2839,7 +2839,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 									+ " where ord.concept_id IN ("
 									+ GlobalProperties.gpGetListOfARVsDrugs()
 									+ ") "
-									+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+									+ " and (select (cast(min(ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 									+ patientId);
 
 					List<Date> patientIdsMinStartDate = queryMinStartDate
@@ -2963,7 +2963,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and pe.gender = 'F' and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -3024,7 +3024,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and pe.gender = 'M' and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -3093,10 +3093,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "where pe.gender = 'M' and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
-							+ "and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ "and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ df.format(oneYearBeforeStartDate)
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ df.format(oneYearBeforeEndDate)
 							+ "' and pg.program_id= "
 							+ Integer.parseInt(GlobalProperties
@@ -3121,7 +3121,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				if (patientIds2.size() == 0) {
 
 					SQLQuery queryMinStartDate = session
-							.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+							.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 									+ " inner join drug_order do on ord.order_id = do.order_id "
 									/*
 									 * +
@@ -3130,7 +3130,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 									+ " where ord.concept_id IN ("
 									+ GlobalProperties.gpGetListOfARVsDrugs()
 									+ ") "
-									+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+									+ " and (select (cast(min(ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 									+ patientId);
 
 					List<Date> patientIdsMinStartDate = queryMinStartDate
@@ -3254,7 +3254,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and pe.gender = 'M' and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -3323,10 +3323,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
-							+ "and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ "and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ startDate
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and o.concept_id = "
 							+ Integer.parseInt(GlobalProperties
@@ -3351,7 +3351,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				List<Integer> patientIds2 = query2.list();
 
 				SQLQuery queryMinStartDate = session
-						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+						.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
 								/*
 								 * +
@@ -3360,7 +3360,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
-								+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+								+ " and (select (cast(min(ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
 				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
@@ -3461,10 +3461,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
-							+ "and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ "and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ startDate
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and o.concept_id = "
 							+ Integer.parseInt(GlobalProperties
@@ -3489,7 +3489,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				List<Integer> patientIds2 = query2.list();
 
 				SQLQuery queryMinStartDate = session
-						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+						.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
 								/*
 								 * +
@@ -3498,7 +3498,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
-								+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+								+ " and (select (cast(min(ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
 				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
@@ -3599,10 +3599,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
-							+ "and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ "and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ startDate
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and o.concept_id = "
 							+ Integer.parseInt(GlobalProperties
@@ -3627,7 +3627,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				List<Integer> patientIds2 = query2.list();
 
 				SQLQuery queryMinStartDate = session
-						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+						.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
 								/*
 								 * +
@@ -3636,7 +3636,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
-								+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+								+ " and (select (cast(min(ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
 				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
@@ -3737,10 +3737,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
-							+ "and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ "and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ startDate
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and o.concept_id = "
 							+ Integer.parseInt(GlobalProperties
@@ -3765,7 +3765,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				List<Integer> patientIds2 = query2.list();
 
 				SQLQuery queryMinStartDate = session
-						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+						.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
 								/*
 								 * +
@@ -3774,7 +3774,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
-								+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+								+ " and (select (cast(min(ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
 				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
@@ -3875,10 +3875,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
-							+ "and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ "and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ startDate
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and o.concept_id = "
 							+ Integer.parseInt(GlobalProperties
@@ -3906,7 +3906,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				List<Integer> patientIds2 = query2.list();
 
 				SQLQuery queryMinStartDate = session
-						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+						.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
 								/*
 								 * +
@@ -3915,7 +3915,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
-								+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+								+ " and (select (cast(min(ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
 				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
@@ -4000,9 +4000,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
 							+ " and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ startDate
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.program_id= "
 							+ Integer.parseInt(GlobalProperties
@@ -4013,11 +4013,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 			for (Integer patientId : patientIds1) {
 
 				SQLQuery queryMinStartDate = session
-						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+						.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
-								+ " and (select (cast((ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+								+ " and (select (cast((ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
 				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
@@ -4079,9 +4079,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
 							+ " and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ startDate
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.program_id= "
 							+ Integer.parseInt(GlobalProperties
@@ -4092,11 +4092,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 			for (Integer patientId : patientIds1) {
 
 				SQLQuery queryMinStartDate = session
-						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+						.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
-								+ " and (select (cast((ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+								+ " and (select (cast((ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
 				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
@@ -4161,9 +4161,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
 							+ " and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ startDate
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.program_id= "
 							+ Integer.parseInt(GlobalProperties
@@ -4175,11 +4175,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 
 				
 				SQLQuery queryMinStartDate = session
-						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+						.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
-								+ " and (select (cast((ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+								+ " and (select (cast((ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
 				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
@@ -4248,10 +4248,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and pe.gender = 'M' and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
-							+ "and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ "and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ startDate
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.program_id= "
 							+ Integer.parseInt(GlobalProperties
@@ -4275,7 +4275,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				if (patientIds2.size() == 0) {
 
 					SQLQuery queryMinStartDate = session
-							.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+							.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 									+ " inner join drug_order do on ord.order_id = do.order_id "
 									/*
 									 * +
@@ -4284,7 +4284,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 									+ " where ord.concept_id IN ("
 									+ GlobalProperties.gpGetListOfARVsDrugs()
 									+ ") "
-									+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+									+ " and (select (cast(min(ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 									+ patientId);
 
 					List<Date> patientIdsMinStartDate = queryMinStartDate
@@ -4352,10 +4352,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
-							+ "and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ "and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ startDate
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and o.concept_id = "
 							+ Integer.parseInt(GlobalProperties
@@ -4380,7 +4380,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				List<Integer> patientIds2 = query2.list();
 
 				SQLQuery queryMinStartDate = session
-						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+						.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
 								/*
 								 * +
@@ -4389,7 +4389,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
-								+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+								+ " and (select (cast(min(ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
 				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
@@ -4489,9 +4489,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
 							+ " and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ startDate
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.program_id= "
 							+ Integer.parseInt(GlobalProperties
@@ -4502,11 +4502,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 			for (Integer patientId : patientIds1) {
 
 				SQLQuery queryMinStartDate = session
-						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+						.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
-								+ " and (select (cast((ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+								+ " and (select (cast((ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
 				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
@@ -4572,9 +4572,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
 							+ "and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ startDate
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.program_id= "
 							+ Integer.parseInt(GlobalProperties
@@ -4585,11 +4585,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 			for (Integer patientId : patientIds1) {
 
 				SQLQuery queryMinStartDate = session
-						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+						.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
-								+ " and (select (cast((ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+								+ " and (select (cast((ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
 				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
@@ -4657,10 +4657,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
-							+ "and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ "and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ startDate
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and o.concept_id = "
 							+ Integer.parseInt(GlobalProperties
@@ -4685,7 +4685,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				List<Integer> patientIds2 = query2.list();
 
 				SQLQuery queryMinStartDate = session
-						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+						.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
 								/*
 								 * +
@@ -4694,7 +4694,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
-								+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+								+ " and (select (cast(min(ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
 				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
@@ -4796,10 +4796,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
-							+ "and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ "and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ startDate
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and o.concept_id = "
 							+ Integer.parseInt(GlobalProperties
@@ -4824,7 +4824,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				List<Integer> patientIds2 = query2.list();
 
 				SQLQuery queryMinStartDate = session
-						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+						.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
 								/*
 								 * +
@@ -4833,7 +4833,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
-								+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+								+ " and (select (cast(min(ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
 				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
@@ -4935,10 +4935,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
-							+ "and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ "and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ startDate
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and o.concept_id = "
 							+ Integer.parseInt(GlobalProperties
@@ -4963,7 +4963,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				List<Integer> patientIds2 = query2.list();
 
 				SQLQuery queryMinStartDate = session
-						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+						.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
 								/*
 								 * +
@@ -4972,7 +4972,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
-								+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+								+ " and (select (cast(min(ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
 				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
@@ -5074,10 +5074,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") "
-							+ "and ord.discontinued=0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ "and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ startDate
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and o.concept_id = "
 							+ Integer.parseInt(GlobalProperties
@@ -5102,7 +5102,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				List<Integer> patientIds2 = query2.list();
 
 				SQLQuery queryMinStartDate = session
-						.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+						.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 								+ " inner join drug_order do on ord.order_id = do.order_id "
 								/*
 								 * +
@@ -5111,7 +5111,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ " where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") "
-								+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+								+ " and (select (cast(min(ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 								+ patientId);
 
 				List<Date> patientIdsMinStartDate = queryMinStartDate.list();
@@ -5206,7 +5206,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfFirstLineDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -5226,7 +5226,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfSecondLineDrugs()
 								+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-								+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+								+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 								+ endDate
 								+ "'"
 								+ " and pg.patient_id="
@@ -5285,7 +5285,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "  and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfSecondLineDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.program_id= "
 							+ Integer.parseInt(GlobalProperties
@@ -5347,7 +5347,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -5410,7 +5410,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -6902,7 +6902,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 												+ "where ord.concept_id IN ("
 												+ GlobalProperties
 														.gpGetListOfARVsDrugs()
-												+ ") and (cast(ord.start_date as DATE)) <= '"
+												+ ") and (cast(ord.date_activated as DATE)) <= '"
 												+ endDate
 												+ "' and pg.program_id= "
 												+ Integer
@@ -7055,7 +7055,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 													.gpGetPositiveAsResultToHIVTestConceptId())) {
 
 										SQLQuery queryMinStartDate = session
-												.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+												.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 														+ " inner join drug_order do on ord.order_id = do.order_id "
 														/*
 														 * +
@@ -7065,7 +7065,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 														+ GlobalProperties
 																.gpGetListOfARVsDrugs()
 														+ ") "
-														+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+														+ " and (select (cast(min(ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 														+ patientId);
 
 										List<Date> patientIdsMinStartDate = queryMinStartDate
@@ -15900,7 +15900,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				.createSQLQuery(
 						"SELECT DISTINCT pat.patient_id from patient pat inner join orders ord on pat.patient_id=ord.patient_id where ord.concept_id IN "
 								+ ConstantValues.LIST_OF_PROPHYLAXIS_DRUGS
-								+ "  AND ord.voided = false AND ord.void_reason is null AND ord.discontinued = false AND ord.discontinued_reason is null")
+								+ "  AND ord.voided = false AND ord.void_reason is null AND ord.order_reason is null")
 				.list();
 
 		for (Integer personEnrolledInPepId : personEnrolledInPepIds) {
@@ -16061,7 +16061,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				.createSQLQuery(
 						"SELECT DISTINCT pat.patient_id from patient pat inner join orders ord on pat.patient_id=ord.patient_id where ord.concept_id IN "
 								+ ConstantValues.LIST_OF_PROPHYLAXIS_DRUGS
-								+ "  AND ord.voided = false AND ord.void_reason is null AND ord.discontinued = false AND ord.discontinued_reason is null")
+								+ "  AND ord.voided = false AND ord.void_reason is null AND ord.order_reason is null")
 				.list();
 
 		for (Integer personEnrolledInPepPRogramAtRiskOfOcupationExposureId : personEnrolledInPepPRogramAtRiskOfOcupationExposureIds) {
@@ -16231,7 +16231,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				.createSQLQuery(
 						"SELECT DISTINCT pat.patient_id from patient pat inner join orders ord on pat.patient_id=ord.patient_id where ord.concept_id IN "
 								+ ConstantValues.LIST_OF_PROPHYLAXIS_DRUGS
-								+ "  AND ord.voided = false AND ord.void_reason is null AND ord.discontinued = false AND ord.discontinued_reason is null")
+								+ "  AND ord.voided = false AND ord.void_reason is null AND ord.order_reason is null")
 				.list();
 
 		for (Integer personEnrolledInPepPRogramAtRiskOfNonOcuppationalExposureId : personEnrolledInPepPRogramAtRiskOfNonOcuppationalExposureIds) {
@@ -16371,7 +16371,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				.createSQLQuery(
 						"SELECT DISTINCT pat.patient_id from patient pat inner join orders ord on pat.patient_id=ord.patient_id where ord.concept_id = "
 								+ ConstantValues.EFAVIRENZ
-								+ "  AND ord.voided = false AND ord.void_reason is null AND ord.discontinued = false AND ord.discontinued_reason is null ")
+								+ "  AND ord.voided = false AND ord.void_reason is null AND ord.order_reason is null ")
 				.list();
 
 		for (Integer patientInProgramId : patientInProgramIds) {
@@ -16434,7 +16434,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				.createSQLQuery(
 						"SELECT DISTINCT pat.patient_id from patient pat inner join orders ord on pat.patient_id=ord.patient_id where ord.concept_id IN "
 								+ ConstantValues.LIST_OF_PROPHYLAXIS_DRUGS
-								+ "  AND ord.voided = false AND ord.void_reason is null AND ord.discontinued = false AND ord.discontinued_reason is null")
+								+ "  AND ord.voided = false AND ord.void_reason is null AND ord.order_reason is null")
 				.list();
 
 		for (Integer personEnrolledInPepPRogramAtRiskOfRapeAssaultId : personEnrolledInPepPRogramAtRiskOfRapeAssaultIds) {
@@ -16599,7 +16599,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "  and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfSecondLineDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.program_id= "
 							+ Integer.parseInt(GlobalProperties
@@ -16665,7 +16665,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -16675,7 +16675,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and o.value_coded = "
 							+ Integer.parseInt(GlobalProperties
 									.gpGetExitFromCareDiedConceptId())
-							+ " and ord.discontinued_date is not null and ord.discontinued_reason = "
+							+ " and ord.date_stopped is not null and ord.order_reason = "
 							+ Integer.parseInt(GlobalProperties
 									.gpGetExitFromCareDiedConceptId())
 							+ " and pg.program_id =  "
@@ -16758,11 +16758,11 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
-							+ "' and ord.discontinued = 1 and pg.date_enrolled <= '"
+							+ "' and pg.date_enrolled <= '"
 							+ endDate
-							+ "' and ord.discontinued_date is not null and pg.program_id =  "
+							+ "' and ord.date_stopped is not null and pg.program_id =  "
 							+ Integer.parseInt(GlobalProperties
 									.gpGetHIVProgramId()));
 
@@ -16806,7 +16806,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 									 */
 									+ " where ord.concept_id IN ("
 									+ GlobalProperties.gpGetListOfARVsDrugs()
-									+ ") and ord.voided = 0 and ord.discontinued = 1 and ord.patient_id = "
+									+ ") and ord.voided = 0 and ord.patient_id = "
 									+ patientId);
 
 					List<Integer> drugsDiscontinuedPerPatient = queryDrugsDiscontinued
@@ -16894,7 +16894,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -16914,7 +16914,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-								+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+								+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 								+ endDate
 								+ "'"
 								+ " and pg.patient_id="
@@ -16976,7 +16976,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -16995,7 +16995,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-								+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+								+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 								+ endDate
 								+ "'"
 								+ " and pg.patient_id="
@@ -17058,7 +17058,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "where ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -17068,7 +17068,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ " and o.value_coded = "
 							+ Integer.parseInt(GlobalProperties
 									.gpGetExitFromCareDiedConceptId())
-							+ " and ord.discontinued_date is not null and ord.discontinued_reason = "
+							+ " and ord.date_stopped is not null and ord.order_reason = "
 							+ Integer.parseInt(GlobalProperties
 									.gpGetExitFromCareDiedConceptId())
 							+ " and pg.program_id =  "
@@ -17092,7 +17092,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-								+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+								+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 								+ endDate
 								+ "'"
 								+ " and pg.patient_id="
@@ -17175,8 +17175,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							 */
 							+ "where ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -17200,8 +17200,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
-								+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-								+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+								+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+								+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 								+ endDate
 								+ "'"
 								+ " and pg.patient_id="
@@ -17335,7 +17335,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "where ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -17365,8 +17365,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
-								+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-								+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+								+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+								+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 								+ endDate
 								+ "'"
 								+ " and pg.patient_id="
@@ -17459,7 +17459,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "where ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
 							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+							+ "and pa.voided = 0 and o.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.date_enrolled <= '"
 							+ endDate
@@ -17490,7 +17490,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
 								+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-								+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+								+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 								+ endDate
 								+ "'"
 								+ " and pg.patient_id="
@@ -17577,8 +17577,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							 */
 							+ "where ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfARVsDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) < '"
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) < '"
 							+ startDate
 							+ "' and pg.date_enrolled < '"
 							+ startDate
@@ -17744,8 +17744,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							 */
 							+ "where ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) < '"
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) < '"
 							+ startDate
 							+ "' and pg.date_enrolled < '"
 							+ startDate
@@ -17769,8 +17769,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
-								+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-								+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) < '"
+								+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+								+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) < '"
 								+ startDate
 								+ "'"
 								+ " and pg.patient_id="
@@ -17865,10 +17865,10 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 				// + "where d.concept_id IN ("
 				// + GlobalProperties.gpGetListOfARVsDrugs()
 				// +
-				// ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-				// + "and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+				// ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+				// + "and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 				// + startDate
-				// + "'and (cast(ord.start_date as DATE)) <= '"
+				// + "'and (cast(ord.date_activated as DATE)) <= '"
 				// + endDate
 				// + "' and pg.date_enrolled <= '"
 				// + endDate
@@ -18011,14 +18011,14 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 												.gpGetPositiveAsResultToHIVTestConceptId())) {
 
 									SQLQuery queryMinStartDate = session
-											.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+											.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 													+ " inner join drug_order do on ord.order_id = do.order_id "
 													+ " inner join drug d on do.drug_inventory_id = d.drug_id "
 													+ " where d.concept_id IN ("
 													+ GlobalProperties
 															.gpGetListOfProphylaxisDrugs()
 													+ ") "
-													+ " and (select (cast(min(ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+													+ " and (select (cast(min(ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 													+ patientId);
 
 									List<Date> patientIdsMinStartDate = queryMinStartDate
@@ -18346,7 +18346,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 < 15 "
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and pg.date_enrolled <= '"
 							+ endDate
 							+ "' and pg.program_id =  "
@@ -18369,8 +18369,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
-								+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-								+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+								+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+								+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 								+ endDate
 								+ "'"
 								+ " and pg.patient_id="
@@ -18505,7 +18505,7 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ "') - TO_DAYS(pe.birthdate)), '%Y')+0 >= 14 "
 							+ " and ord.concept_id IN ("
 							+ GlobalProperties.gpGetListOfProphylaxisDrugs()
-							+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+							+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
 							+ "and pa.voided = 0 and pg.date_enrolled <= '"
 							+ endDate
 							+ "' and pg.program_id =  "
@@ -18528,8 +18528,8 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 								 */
 								+ "where ord.concept_id IN ("
 								+ GlobalProperties.gpGetListOfARVsDrugs()
-								+ ") and ord.discontinued = 0 and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-								+ "and pa.voided = 0 and (cast(ord.start_date as DATE)) <= '"
+								+ ") and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
+								+ "and pa.voided = 0 and (cast(ord.date_activated as DATE)) <= '"
 								+ endDate
 								+ "'"
 								+ " and pg.patient_id="
@@ -18658,9 +18658,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ GlobalProperties.gpGetListOfSecondLineDrugs()
 							+ ") "
 							+ " and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ " and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ " and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ startDate
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.program_id= "
 							+ Integer.parseInt(GlobalProperties
@@ -18672,12 +18672,12 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 			for (Integer patientId : patientIdsOnCotrimo) {
 
 					SQLQuery queryMinStartDate = session
-							.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+							.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 									+ " where ord.concept_id IN ("
 									+ GlobalProperties
 											.gpGetListOfSecondLineDrugs()
 									+ ") "
-									+ " and (select(cast((ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+									+ " and (select(cast((ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 									+ patientId);
 
 					List<Date> patientIdsMinStartDate = queryMinStartDate.list();
@@ -18736,9 +18736,9 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 							+ GlobalProperties.gpGetListOfSecondLineDrugs()
 							+ ") "
 							+ " and pg.voided = 0 and pe.voided = 0 and ord.voided = 0 "
-							+ " and pa.voided = 0 and (cast(ord.start_date as DATE)) >= '"
+							+ " and pa.voided = 0 and (cast(ord.date_activated as DATE)) >= '"
 							+ startDate
-							+ "' and (cast(ord.start_date as DATE)) <= '"
+							+ "' and (cast(ord.date_activated as DATE)) <= '"
 							+ endDate
 							+ "' and pg.program_id= "
 							+ Integer.parseInt(GlobalProperties
@@ -18750,12 +18750,12 @@ public class TracNetPatientServiceImpl implements TracNetPatientService {
 			for (Integer patientId : patientIdsOnCotrimo) {
 
 					SQLQuery queryMinStartDate = session
-							.createSQLQuery("select (cast(min(ord.start_date)as Date)) from orders ord "
+							.createSQLQuery("select (cast(min(ord.date_activated)as Date)) from orders ord "
 									+ " where ord.concept_id IN ("
 									+ GlobalProperties
 											.gpGetListOfSecondLineDrugs()
 									+ ") "
-									+ " and (select(cast((ord.start_date)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
+									+ " and (select(cast((ord.date_activated)as Date))) is not null and ord.voided = 0 and ord.patient_id = "
 									+ patientId);
 
 					List<Date> patientIdsMinStartDate = queryMinStartDate.list();
