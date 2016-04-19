@@ -4,24 +4,20 @@
 <!--  <openmrs:require privilege="View TRACNet Reporting" otherwise="/login.htm" redirect="/module/@MODULE_ID@/tracnetreportingForm.list" /> -->
 
 <openmrs:htmlInclude file="/scripts/calendar/calendar.js" />
-<openmrs:htmlInclude file="/moduleResources/@MODULE_ID@/styles/ui.all.css" />
 <openmrs:htmlInclude file="/moduleResources/@MODULE_ID@/styles/demos.css" />
-<openmrs:htmlInclude file="/moduleResources/@MODULE_ID@/scripts/ui.core.js" />
-<openmrs:htmlInclude file="/moduleResources/@MODULE_ID@/scripts/ui.accordion.js" />
-<openmrs:htmlInclude file="/moduleResources/@MODULE_ID@/scripts/ui.tabs.js" />
 
 <script type="text/javascript">
 
-	$(function() {
-		$("#accordion1").accordion({collapsible: true, autoHeight: false});
+	jQuery(function() {
+		jQuery("#accordion1").accordion({collapsible: true, autoHeight: false});
 	});
 
-	$(function() {
-		$("#accordion2").accordion({collapsible: true, autoHeight: false});
+	jQuery(function() {
+		jQuery("#accordion2").accordion({collapsible: true, autoHeight: false});
 	});
 
-	$(function() {
-		$("#tabs").tabs({collapsible: true});
+	jQuery(function() {
+		jQuery("#tabs").tabs({collapsible: true});
 	});
 	
 </script>

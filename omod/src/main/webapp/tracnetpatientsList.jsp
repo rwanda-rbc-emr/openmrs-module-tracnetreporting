@@ -3,14 +3,13 @@
 
 <!-- <openmrs:require privilege="View TRACNet Reporting" otherwise="/login.htm" redirect="/module/@MODULE_ID@/tracnetreportingForm.list" />  -->
 
-<openmrs:htmlInclude file="/moduleResources/@MODULE_ID@/scripts/jquery.js" />
 <openmrs:htmlInclude file="/moduleResources/@MODULE_ID@/scripts/jquery.dataTables.js" />
 <openmrs:htmlInclude file="/moduleResources/@MODULE_ID@/styles/demo_page.css" />
 <openmrs:htmlInclude file="/moduleResources/@MODULE_ID@/styles/demo_table.css" />
 
 <script type="text/javascript" charset="utf-8">
-			$(document).ready(function() {
-				$('#example').dataTable( {
+			jQuery(document).ready(function() {
+				jQuery('#example').dataTable( {
 					"sPaginationType": "full_numbers"
 				} );
 			} );
