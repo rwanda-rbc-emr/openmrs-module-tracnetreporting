@@ -4,7 +4,7 @@
 
 	<groupId>org.openmrs.module</groupId>
 	<artifactId>tracnetreporting</artifactId>
-	<version>0.1.0.28</version>
+	<version>0.2-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>TracNet Reporting</name>
 	<description>Parent project for TracNet Reporting</description>
